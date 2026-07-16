@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lek &amp; Lær!</title>
+  <meta name="description" content="Morsomt lærespill for barn – matte og lesing på norsk.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦊</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Animated scenery -->
+  <div class="scene" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <div class="cloud c3"></div>
+    <div class="bird-track"><span class="bird">🐦</span></div>
+    <div class="butterfly-track"><span class="butterfly">🦋</span></div>
+    <div class="bee-track"><span class="bee">🐝</span></div>
+    <div class="flower" style="left:5vw">🌷</div>
+    <div class="flower" style="left:14vw; animation-delay:-1s">🌼</div>
+    <div class="flower" style="left:24vw; animation-delay:-2.4s">🌸</div>
+    <div class="flower" style="right:22vw; animation-delay:-1.6s">🌼</div>
+    <div class="flower" style="right:12vw; animation-delay:-2s">🌻</div>
+    <div class="flower" style="right:4vw; animation-delay:-.5s">🌷</div>
+  </div>
+
+  <canvas id="confetti"></canvas>
+
+  <main class="frame">
+    <header class="top">
+      <div class="logo">Lek <span class="amp">&amp;</span> Lær!</div>
+      <button class="icon-btn" id="soundBtn" aria-label="Lyd av/på">🔊</button>
+    </header>
+    <div class="board" id="board" aria-live="polite"></div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/confetti.js"></script>
+  <script src="js/questions.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
