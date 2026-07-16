@@ -74,6 +74,14 @@
             '<span class="big">🇬🇧</span>' +
             '<span>Engelsk<small>Lær engelske ord</small></span>' +
           '</button>' +
+          '<button class="mode-btn tegne" data-mode="tegne">' +
+            '<span class="big">🎨</span>' +
+            '<span>Tegne-leken<small>Mal over bokstaver og tall</small></span>' +
+          '</button>' +
+          '<button class="mode-btn prikk" data-mode="prikk">' +
+            '<span class="big">✏️</span>' +
+            '<span>Prikk til prikk<small>Tegn streker fra tall til tall</small></span>' +
+          '</button>' +
         '</div>' +
       '</div>';
     board.querySelectorAll('.mode-btn').forEach(function (b) {
@@ -121,12 +129,19 @@
 
   /* ---------- Round ---------- */
 
+  /* Drawing rounds are shorter — each picture takes a while. */
+  function roundLenFor(mode) {
+    return (mode === 'tegne' || mode === 'prikk') ? 4 : ROUND_LEN;
+  }
+
   function startRound(mode, level) {
     if (mode === 'racer') { startRace(level); return; }
+    var len = roundLenFor(mode);
     state = {
       mode: mode,
       level: level,
-      qs: LekQuestions.buildRound(mode, level, ROUND_LEN),
+      len: len,
+      qs: LekQuestions.buildRound(mode, level, len),
       i: 0,
       score: 0,
       streak: 0,
@@ -138,7 +153,7 @@
 
   function dotsHtml() {
     var h = '<div class="dots" aria-label="Fremdrift">';
-    for (var k = 0; k < ROUND_LEN; k++) {
+    for (var k = 0; k < state.len; k++) {
       var cls = 'dot';
       if (k < state.results.length) cls += state.results[k] ? ' win' : ' miss';
       else if (k === state.i) cls += ' now';
@@ -238,7 +253,42 @@
           stage: '<div class="prompt">Hva er klokka?</div>' + clockSvg(q.h, q.m),
           options: q.options, cls: ' text'
         };
+      case 'trace':
+        return {
+          stage: '<div class="prompt">Mal over hele ' + (q.isDigit ? 'tallet' : 'bokstaven') + ' med fingeren! 🖌️</div>' +
+                 '<canvas id="traceCanvas" class="trace-canvas"></canvas>' +
+                 '<div class="trace-bar"><div class="trace-fill" id="traceFill"></div></div>' +
+                 '<button class="mini-btn" id="traceClear">Tøm 🧽</button>',
+          options: null, cls: ''
+        };
+      case 'dots':
+        return {
+          stage: '<div class="prompt">' +
+                   (q.step > 1
+                     ? 'Tell med ' + q.step + ' — trykk tallene i rekkefølge!'
+                     : 'Trykk på tallene i rekkefølge — hva blir det? 🤔') +
+                 '</div>' + dotsSvg(q),
+          options: null, cls: ''
+        };
     }
+  }
+
+  /* Connect-the-dots board as inline SVG */
+  function dotsSvg(q) {
+    var h = '<svg class="dots-svg" viewBox="0 0 100 100" role="img" aria-label="Prikk til prikk">' +
+            '<path id="dotsPath" d="" fill="none" stroke="#4FA8E0" stroke-width="2.4" ' +
+              'stroke-linecap="round" stroke-linejoin="round"/>';
+    q.shape.pts.forEach(function (p, i) {
+      var label = q.labels[i];
+      var fs = label.length >= 3 ? 3.4 : label.length === 2 ? 4 : 4.8;
+      h += '<g class="dsdot" data-i="' + i + '">' +
+             '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="9" fill="transparent"/>' +
+             '<circle class="face" cx="' + p[0] + '" cy="' + p[1] + '" r="5.4"/>' +
+             '<text x="' + p[0] + '" y="' + (p[1] + fs * 0.36) + '" text-anchor="middle" ' +
+               'font-size="' + fs + '">' + label + '</text>' +
+           '</g>';
+    });
+    return h + '</svg>';
   }
 
   /* Analog clock face as inline SVG */
@@ -276,9 +326,9 @@
     var lvl = D.LEVELS[state.level - 1];
     var m = D.MODES[state.mode];
 
-    var answersHtml = part.options.map(function (o) {
+    var answersHtml = part.options ? part.options.map(function (o) {
       return '<button class="ans" data-v="' + esc(o) + '">' + esc(o) + '</button>';
-    }).join('');
+    }).join('') : '';
 
     board.innerHTML =
       '<div class="screen">' +
@@ -291,8 +341,8 @@
           dotsHtml() +
           '<div class="streak">' + (state.streak >= 3 ? '🔥 ' + state.streak + ' på rad!' : '') + '</div>' +
         '</div>' +
-        '<div class="stage">' + part.stage +
-          '<div class="answers' + part.cls + '">' + answersHtml + '</div>' +
+        '<div class="stage' + (part.options ? '' : ' draw') + '">' + part.stage +
+          (part.options ? '<div class="answers' + part.cls + '">' + answersHtml + '</div>' : '') +
           '<div class="feedback" id="fb"></div>' +
         '</div>' +
       '</div>';
@@ -300,7 +350,9 @@
     document.getElementById('backBtn').addEventListener('click', function () {
       LekAudio.click(); showMenu();
     });
-    board.querySelectorAll('.ans').forEach(function (b) {
+    if (q.kind === 'trace') initTrace(q);
+    else if (q.kind === 'dots') initDots(q);
+    else board.querySelectorAll('.ans').forEach(function (b) {
       b.addEventListener('click', function () { answer(b, q); });
     });
   }
@@ -357,21 +409,246 @@
   }
 
   function next() {
+    if (!state) return; // player went back to the menu mid-celebration
     state.i++;
-    if (state.i >= ROUND_LEN) showResult();
+    if (state.i >= state.len) showResult();
     else showQuestion();
+  }
+
+  /* Shared celebration for the drawing games (no answer buttons). */
+  function finishDrawing(earned, msg, delay) {
+    var fb = document.getElementById('fb');
+    state.results.push(earned);
+    if (earned) { state.score++; state.streak++; floatStar(); }
+    else { state.streak = 0; }
+    if (fb) { fb.textContent = msg; fb.className = 'feedback yay'; }
+    LekAudio.good();
+    foxReact('jump');
+    LekConfetti.burst(earned ? 34 : 16);
+    setTimeout(next, delay);
+  }
+
+  /* ---------- Tegne-leken ----------
+     Paint over a dashed stencil with a rainbow brush. The stencil is
+     rendered to an offscreen canvas and sampled to a point grid; the
+     round is done when nearly every sample has been painted over. */
+
+  function initTrace(q) {
+    var canvas = document.getElementById('traceCanvas');
+    var SIZE = 320;
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = SIZE * dpr;
+    canvas.height = SIZE * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    var FAMILY = '"Baloo 2", ui-rounded, "Comic Sans MS", sans-serif';
+
+    // Fit the glyph inside the canvas regardless of its natural proportions
+    var off = document.createElement('canvas');
+    off.width = SIZE; off.height = SIZE;
+    var octx = off.getContext('2d');
+    var fontPx = 240;
+    octx.font = '800 ' + fontPx + 'px ' + FAMILY;
+    var m = octx.measureText(q.ch);
+    var asc = m.actualBoundingBoxAscent || fontPx * 0.72;
+    var desc = m.actualBoundingBoxDescent || fontPx * 0.05;
+    var scale = Math.min(1, 246 / m.width, 258 / (asc + desc));
+    if (scale < 1) {
+      fontPx = Math.floor(fontPx * scale);
+      octx.font = '800 ' + fontPx + 'px ' + FAMILY;
+      m = octx.measureText(q.ch);
+      asc = m.actualBoundingBoxAscent || fontPx * 0.72;
+      desc = m.actualBoundingBoxDescent || fontPx * 0.05;
+    }
+    var tx = SIZE / 2, ty = SIZE / 2 + (asc - desc) / 2;
+
+    octx.textAlign = 'center';
+    octx.fillText(q.ch, tx, ty);
+    var img = octx.getImageData(0, 0, SIZE, SIZE).data;
+    var samples = [];
+    for (var y = 3; y < SIZE; y += 7) {
+      for (var x = 3; x < SIZE; x += 7) {
+        if (img[(y * SIZE + x) * 4 + 3] > 140) samples.push([x, y]);
+      }
+    }
+
+    function drawStencil() {
+      ctx.clearRect(0, 0, SIZE, SIZE);
+      ctx.font = '800 ' + fontPx + 'px ' + FAMILY;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#E9F1F9';
+      ctx.fillText(q.ch, tx, ty);
+      ctx.save();
+      ctx.setLineDash([9, 7]);
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#8FB3CF';
+      ctx.strokeText(q.ch, tx, ty);
+      ctx.restore();
+    }
+    drawStencil();
+
+    var covered = new Array(samples.length);
+    var coveredCount = 0, painted = 0, hits = 0;
+    var drawing = false, done = false, last = null;
+    var hue = ri(360);
+    var fill = document.getElementById('traceFill');
+
+    function markAt(px, py) {
+      var hit = false;
+      for (var i = 0; i < samples.length; i++) {
+        var dx = samples[i][0] - px, dy = samples[i][1] - py;
+        if (dx * dx + dy * dy < 400) { // within 20px of the stencil
+          hit = true;
+          if (!covered[i]) { covered[i] = true; coveredCount++; }
+        }
+      }
+      painted++;
+      if (hit) hits++;
+    }
+
+    function paintTo(px, py) {
+      ctx.strokeStyle = 'hsl(' + hue + ', 88%, 56%)';
+      ctx.fillStyle = ctx.strokeStyle;
+      hue = (hue + 4) % 360;
+      if (last) {
+        var dx = px - last[0], dy = py - last[1];
+        var steps = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy) / 6));
+        for (var s = 1; s <= steps; s++) {
+          markAt(last[0] + dx * s / steps, last[1] + dy * s / steps);
+        }
+        ctx.lineWidth = 26;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(last[0], last[1]);
+        ctx.lineTo(px, py);
+        ctx.stroke();
+      } else {
+        markAt(px, py);
+        ctx.beginPath();
+        ctx.arc(px, py, 13, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      last = [px, py];
+
+      var pct = samples.length ? coveredCount / samples.length : 1;
+      if (fill) fill.style.width = Math.min(100, Math.round(pct * 113)) + '%';
+      if (pct >= 0.88) finishTrace();
+    }
+
+    function finishTrace() {
+      if (done) return;
+      done = true;
+      var accuracy = painted ? hits / painted : 1;
+      var earned = accuracy >= 0.45;
+      if (fill) fill.style.width = '100%';
+      finishDrawing(earned,
+        earned ? pick(D.PRAISE) : 'Ferdig! Prøv å male mer innenfor streken 🖌️',
+        1400);
+    }
+
+    function pos(e) {
+      var r = canvas.getBoundingClientRect();
+      return [(e.clientX - r.left) * SIZE / r.width, (e.clientY - r.top) * SIZE / r.height];
+    }
+    canvas.addEventListener('pointerdown', function (e) {
+      if (done) return;
+      e.preventDefault();
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* old browsers */ }
+      drawing = true;
+      last = null;
+      var p = pos(e); paintTo(p[0], p[1]);
+    });
+    canvas.addEventListener('pointermove', function (e) {
+      if (!drawing || done) return;
+      e.preventDefault();
+      var p = pos(e); paintTo(p[0], p[1]);
+    });
+    canvas.addEventListener('pointerup', function () { drawing = false; last = null; });
+    canvas.addEventListener('pointercancel', function () { drawing = false; last = null; });
+
+    document.getElementById('traceClear').addEventListener('click', function () {
+      if (done) return;
+      LekAudio.click();
+      covered = new Array(samples.length);
+      coveredCount = 0; painted = 0; hits = 0; last = null;
+      if (fill) fill.style.width = '0%';
+      drawStencil();
+    });
+  }
+
+  /* ---------- Prikk til prikk ----------
+     Tap the dots in number order; lines appear and the picture reveals. */
+
+  function initDots(q) {
+    var svg = board.querySelector('.dots-svg');
+    var path = svg.querySelector('#dotsPath');
+    var groups = svg.querySelectorAll('.dsdot');
+    var pts = q.shape.pts;
+    var nextI = 0, done = false, d = '';
+
+    groups[0].classList.add('next'); // show where to start
+
+    function complete() {
+      done = true;
+      if (q.shape.close) d += ' Z';
+      path.setAttribute('d', d);
+      path.setAttribute('fill', '#FFE9A8');
+      path.setAttribute('fill-opacity', '0.55');
+
+      var cx = 0, cy = 0;
+      pts.forEach(function (p) { cx += p[0]; cy += p[1]; });
+      var t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t.setAttribute('x', (cx / pts.length).toFixed(1));
+      t.setAttribute('y', (cy / pts.length + 7).toFixed(1));
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '20');
+      t.setAttribute('class', 'ds-emoji');
+      t.textContent = q.shape.emoji;
+      svg.appendChild(t);
+
+      var earned = state.firstTry;
+      finishDrawing(earned,
+        (earned ? pick(D.PRAISE) : 'Bra! ') + ' Det ble ' + q.shape.name.toLowerCase() + '! ' + q.shape.emoji,
+        1700);
+    }
+
+    groups.forEach(function (g) {
+      g.addEventListener('click', function () {
+        if (done) return;
+        var i = Number(g.dataset.i);
+        if (i === nextI) {
+          g.classList.remove('next');
+          g.classList.add('done');
+          d += (d ? ' L ' : 'M ') + pts[i][0] + ' ' + pts[i][1];
+          path.setAttribute('d', d);
+          LekAudio.click();
+          nextI++;
+          if (nextI === pts.length) complete();
+        } else if (i > nextI) {
+          state.firstTry = false;
+          g.classList.remove('shake');
+          void g.getBoundingClientRect(); // force reflow so the shake can replay
+          g.classList.add('shake');
+          var fb = document.getElementById('fb');
+          if (fb) { fb.textContent = pick(D.NUDGE); fb.className = 'feedback oops'; }
+          LekAudio.bad();
+          foxReact('sad');
+        }
+      });
+    });
   }
 
   /* ---------- Result ---------- */
 
   function showResult() {
-    var s = state.score;
-    var starCount = s >= 9 ? 3 : s >= 5 ? 2 : 1;
+    var s = state.score, len = state.len;
+    var starCount = s >= Math.ceil(len * 0.85) ? 3 : s >= Math.ceil(len * 0.5) ? 2 : 1;
     var isRecord = saveBest(state.mode, state.level, starCount);
     var msg =
-      s === ROUND_LEN ? 'PERFEKT! Du er en superstjerne! 🏆' :
-      s >= 7 ? 'Kjempebra jobba! 🎉' :
-      s >= 4 ? 'Bra jobba! 💪' :
+      s === len ? 'PERFEKT! Du er en superstjerne! 🏆' :
+      s >= len * 0.7 ? 'Kjempebra jobba! 🎉' :
+      s >= len * 0.4 ? 'Bra jobba! 💪' :
       'God innsats! Øvelse gjør mester 🍀';
 
     var starsHtml = '';
@@ -387,7 +664,7 @@
         '<h2>' + msg + '</h2>' +
         '<div class="stars" aria-label="' + starCount + ' av 3 stjerner">' + starsHtml + '</div>' +
         (isRecord ? '<div class="record">Ny rekord! 🏅</div>' : '') +
-        '<div class="score-line">Du klarte <strong>' + s + ' av ' + ROUND_LEN + '</strong> på første forsøk!</div>' +
+        '<div class="score-line">Du klarte <strong>' + s + ' av ' + len + '</strong> på første forsøk!</div>' +
         '<div class="btn-row">' +
           '<button class="cta primary" id="againBtn">Spill igjen! 🔁</button>' +
           '<button class="cta ghost" id="levelBtn">Velg nivå 🎯</button>' +

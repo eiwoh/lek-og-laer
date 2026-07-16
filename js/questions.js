@@ -12,6 +12,8 @@
      trivia   — quiz question, text options
      clock    — analog clock face, choose the spoken time
      pattern  — number sequence, choose what comes next
+     trace    — paint over a letter/number stencil (no answer buttons)
+     dots     — connect-the-dots picture (no answer buttons)
 */
 
 var LekQuestions = (function () {
@@ -413,6 +415,29 @@ var LekQuestions = (function () {
     return shuffle(qs);
   }
 
+  /* ---------- Tegne-leken ----------
+     Level 1 paints uppercase letters, 2 paints digits, 3 lowercase. */
+
+  function traceRound(level, n) {
+    var pool = level === 1 ? D.TRACE.upper :
+               level === 2 ? D.TRACE.digits : D.TRACE.lower;
+    return shuffle(pool).slice(0, n).map(function (ch) {
+      return { kind: 'trace', ch: ch, isDigit: level === 2 };
+    });
+  }
+
+  /* ---------- Prikk til prikk ----------
+     Levels 1–2 count 1, 2, 3…; level 3 skip-counts by 2, 5 or 10. */
+
+  function dotsRound(level, n) {
+    var pool = level === 3 ? D.SHAPES[2] : D.SHAPES[level];
+    return shuffle(pool).slice(0, n).map(function (shape) {
+      var step = level === 3 ? pick([2, 5, 10]) : 1;
+      var labels = shape.pts.map(function (_, i) { return String(step + i * step); });
+      return { kind: 'dots', shape: shape, labels: labels, step: step };
+    });
+  }
+
   function clockRound(level, n) {
     var variants = level === 1 ? ['hel'] :
                    level === 2 ? ['hel', 'halv'] :
@@ -432,6 +457,8 @@ var LekQuestions = (function () {
         case 'quiz':    return triviaRound(level, n);
         case 'klokke':  return clockRound(level, n);
         case 'engelsk': return englishRound(level, n);
+        case 'tegne':   return traceRound(level, n);
+        case 'prikk':   return dotsRound(level, n);
       }
     }
   };

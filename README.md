@@ -60,9 +60,32 @@ mange du klarer på ett minutt. Feil svar koster bare tid. Beste antall lagres s
 | 🐰 Middels | Norsk ord → engelsk ord, farger og tall |
 | 🦉 Vanskelig | Enkle quizspørsmål på engelsk |
 
-Hver runde har 10 spørsmål (unntatt Regne-racer, som varer ett minutt). Riktig svar på
-første forsøk gir en stjerne — feil svar er ufarlig, man bare prøver igjen. Beste resultat
-per nivå lagres i nettleseren (localStorage).
+**🎨 Tegne-leken**
+
+Mal over en stor stiplet bokstav eller et tall med regnbuepensel (fungerer med
+finger, mus og pekepenn). Runden på 4 tegninger fullføres når nesten hele
+sjablongen er dekket; stjerne hvis man holder seg sånn passe innenfor streken.
+
+| Nivå | Innhold |
+|------|---------|
+| 🐣 Lett | Store bokstaver (A–Å) |
+| 🐰 Middels | Tallene 0–9 |
+| 🦉 Vanskelig | Små bokstaver |
+
+**✏️ Prikk til prikk**
+
+Trykk på tallene i riktig rekkefølge, så tegnes strekene og et bilde dukker opp
+(stjerne, hus, rakett, sommerfugl …). Stjerne hvis man ikke bommer på rekkefølgen.
+
+| Nivå | Innhold |
+|------|---------|
+| 🐣 Lett | Tell 1, 2, 3 … (6–10 prikker, enkle figurer) |
+| 🐰 Middels | Tell 1, 2, 3 … (10–16 prikker, vanskeligere figurer) |
+| 🦉 Vanskelig | Hopptelling med 2, 5 og 10 |
+
+Hver runde har 10 spørsmål (Tegne-leken og Prikk til prikk har 4, Regne-racer varer
+ett minutt). Riktig svar på første forsøk gir en stjerne — feil svar er ufarlig, man
+bare prøver igjen. Beste resultat per nivå lagres i nettleseren (localStorage).
 
 ## Kjøre spillet
 

@@ -199,6 +199,42 @@ var LekData = {
   // Hour names for the clock game: index 1..12
   CLOCK_NUM: ['', 'ett', 'to', 'tre', 'fire', 'fem', 'seks', 'sju', 'åtte', 'ni', 'ti', 'elleve', 'tolv'],
 
+  // Prikk til prikk: dot coordinates in a 0–100 viewBox, in tap order.
+  // close: the last dot connects back to the first when done.
+  SHAPES: {
+    1: [
+      { name: 'Lyn', emoji: '⚡', close: true,
+        pts: [[60,6],[28,54],[45,54],[40,94],[74,40],[56,40]] },
+      { name: 'Hus', emoji: '🏠', close: true,
+        pts: [[50,10],[90,42],[78,42],[78,88],[22,88],[22,42],[10,42]] },
+      { name: 'Krone', emoji: '👑', close: true,
+        pts: [[18,78],[14,36],[32,54],[50,22],[68,54],[86,36],[82,78]] },
+      { name: 'Fisk', emoji: '🐟', close: true,
+        pts: [[8,50],[30,28],[58,28],[76,44],[94,28],[94,72],[76,56],[58,72],[30,72]] },
+      { name: 'Stjerne', emoji: '⭐', close: true,
+        pts: [[50,12],[61,39],[90,41],[67,60],[75,88],[50,72],[25,88],[33,60],[10,41],[39,39]] },
+      { name: 'Hjerte', emoji: '❤️', close: true,
+        pts: [[50,88],[20,55],[12,34],[22,18],[37,16],[50,28],[63,16],[78,18],[88,34],[80,55]] }
+    ],
+    2: [
+      { name: 'Katt', emoji: '🐱', close: true,
+        pts: [[28,14],[40,28],[60,28],[72,14],[80,34],[78,56],[64,72],[36,72],[22,56],[20,34]] },
+      { name: 'Rakett', emoji: '🚀', close: true,
+        pts: [[50,4],[63,20],[66,52],[78,68],[78,86],[62,74],[38,74],[22,86],[22,68],[34,52],[37,20]] },
+      { name: 'Juletre', emoji: '🎄', close: true,
+        pts: [[50,6],[68,28],[58,28],[76,50],[64,50],[84,72],[56,72],[56,88],[44,88],[44,72],[16,72],[36,50],[24,50],[42,28],[32,28]] },
+      { name: 'Sommerfugl', emoji: '🦋', close: true,
+        pts: [[50,36],[62,22],[80,10],[92,26],[84,44],[90,62],[78,78],[60,66],[50,58],[40,66],[22,78],[10,62],[16,44],[8,26],[20,10],[38,22]] }
+    ]
+  },
+
+  // Tegne-leken: characters to paint over, per level.
+  TRACE: {
+    upper: 'ABCDEFGHKLMNOPRSTUVYÆØÅ'.split(''),
+    digits: '0123456789'.split(''),
+    lower: 'abdefghkmnprstuy'.split('')
+  },
+
   LETTERS: 'ABDEFGHIJKLMNOPRSTUVYÆØÅ'.split(''),
 
   COUNT_EMOJI: ['🍓', '🐞', '🎈', '⭐', '🐠', '🦋', '🍪', '🚀'],
@@ -224,6 +260,8 @@ var LekData = {
     lesing:  { title: 'Lese-leken',     icon: '📖', levels: 3 },
     quiz:    { title: 'Quiz-tid',       icon: '🧠', levels: 3 },
     klokke:  { title: 'Klokke-spillet', icon: '🕐', levels: 3 },
-    engelsk: { title: 'Engelsk',        icon: '🇬🇧', levels: 3 }
+    engelsk: { title: 'Engelsk',        icon: '🇬🇧', levels: 3 },
+    tegne:   { title: 'Tegne-leken',    icon: '🎨', levels: 3 },
+    prikk:   { title: 'Prikk til prikk', icon: '✏️', levels: 3 }
   }
 };
