@@ -46,6 +46,10 @@
           '<div class="bubble">Hei! Jeg heter Rev. Hva vil du leke i dag?</div>' +
         '</div>' +
         '<div class="menu">' +
+          '<button class="mode-btn eventyr" data-mode="eventyr">' +
+            '<span class="big">🗺️</span>' +
+            '<span>Eventyr<small>Gå på tur og lås opp nye land!</small></span>' +
+          '</button>' +
           '<button class="mode-btn matte" data-mode="matte">' +
             '<span class="big">🔢</span>' +
             '<span>Matte-moro<small>Pluss, minus, ganging og mer</small></span>' +
@@ -87,7 +91,8 @@
     board.querySelectorAll('.mode-btn').forEach(function (b) {
       b.addEventListener('click', function () {
         LekAudio.click();
-        showLevels(b.dataset.mode);
+        if (b.dataset.mode === 'eventyr') showAdventure();
+        else showLevels(b.dataset.mode);
       });
     });
   }
@@ -323,8 +328,19 @@
     state.firstTry = true;
 
     var part = stageFor(q);
-    var lvl = D.LEVELS[state.level - 1];
-    var m = D.MODES[state.mode];
+    var isAdv = state.adv != null;
+    var chip, backText;
+    if (isAdv) {
+      var node = D.ADVENTURE.NODES[state.adv];
+      var area = D.ADVENTURE.AREAS[node.area];
+      chip = area.emoji + ' ' + area.name + (node.boss ? ' 👑' : '');
+      backText = '← Til kartet';
+    } else {
+      var lvl = D.LEVELS[state.level - 1];
+      var m = D.MODES[state.mode];
+      chip = m.icon + ' ' + lvl.icon + ' ' + lvl.name;
+      backText = '← Til menyen';
+    }
 
     var answersHtml = part.options ? part.options.map(function (o) {
       return '<button class="ans" data-v="' + esc(o) + '">' + esc(o) + '</button>';
@@ -333,8 +349,8 @@
     board.innerHTML =
       '<div class="screen">' +
         '<div class="top-row">' +
-          '<button class="back-link" id="backBtn">← Til menyen</button>' +
-          '<span class="chip">' + m.icon + ' ' + lvl.icon + ' ' + lvl.name + '</span>' +
+          '<button class="back-link" id="backBtn">' + backText + '</button>' +
+          '<span class="chip">' + chip + '</span>' +
         '</div>' +
         '<div class="hud">' +
           '<span class="hud-fox" id="hudFox">🦊</span>' +
@@ -348,7 +364,8 @@
       '</div>';
 
     document.getElementById('backBtn').addEventListener('click', function () {
-      LekAudio.click(); showMenu();
+      LekAudio.click();
+      if (isAdv) showAdventure(); else showMenu();
     });
     if (q.kind === 'trace') initTrace(q);
     else if (q.kind === 'dots') initDots(q);
@@ -639,9 +656,298 @@
     });
   }
 
+  /* ---------- Eventyr ----------
+     A tall, scrollable map through themed lands. Posts unlock one by one;
+     the fox stands on the next post to play and walks onward when you
+     clear it. Progress (stars per post) lives in localStorage. */
+
+  var ADV_KEY = 'lekOgLaerEventyr';
+  var ADV_SPACING = 96, ADV_PAD_TOP = 110, ADV_PAD_BOT = 84;
+  var advFoxFrom = null; // post the fox walks from after a first clear
+
+  function advLoad() {
+    try {
+      var adv = JSON.parse(localStorage.getItem(ADV_KEY));
+      if (adv && adv.stars) return adv;
+    } catch (e) { /* fall through */ }
+    return { stars: {} };
+  }
+  function advSave(adv) {
+    try { localStorage.setItem(ADV_KEY, JSON.stringify(adv)); } catch (e) { /* private mode */ }
+  }
+
+  function advMapHeight() {
+    return ADV_PAD_TOP + ADV_PAD_BOT + (D.ADVENTURE.NODES.length - 1) * ADV_SPACING;
+  }
+  /* Post i's centre: winds left/right on the way up the map. x is a
+     0–1 fraction of the map width, y is in px from the top. */
+  function advPos(i) {
+    return {
+      x: 0.5 + 0.31 * Math.sin(i * 1.7 + 0.9),
+      y: advMapHeight() - ADV_PAD_BOT - i * ADV_SPACING
+    };
+  }
+  function advUnlocked(adv, i) { return i === 0 || !!adv.stars[i - 1]; }
+  /* The frontier is the first uncleared post — where the fox stands. */
+  function advFrontier(adv) {
+    var n = D.ADVENTURE.NODES.length, i = 0;
+    while (i < n && adv.stars[i]) i++;
+    return Math.min(i, n - 1);
+  }
+  function advNodeLen(node) {
+    if (node.mode === 'tegne' || node.mode === 'prikk') return 3;
+    return node.boss ? 6 : 5;
+  }
+  function advNodeIcon(node) {
+    return node.emoji || D.MODES[node.mode].icon;
+  }
+
+  function showAdventure() {
+    state = null;
+    var adv = advLoad();
+    var NODES = D.ADVENTURE.NODES, AREAS = D.ADVENTURE.AREAS;
+    var mapH = advMapHeight();
+    var frontier = advFrontier(adv);
+    var allDone = !!adv.stars[NODES.length - 1];
+    var total = 0;
+    NODES.forEach(function (_, i) { total += adv.stars[i] || 0; });
+
+    board.innerHTML =
+      '<div class="screen adventure">' +
+        '<div class="top-row">' +
+          '<button class="back-link" id="backBtn">← Til menyen</button>' +
+          '<span class="chip">🗺️ Eventyr · ⭐ ' + total + '/' + NODES.length * 3 + '</span>' +
+        '</div>' +
+        '<div class="adv-scroll" id="advScroll">' +
+          '<div class="adv-map" id="advMap" style="height:' + mapH + 'px"></div>' +
+        '</div>' +
+      '</div>';
+    document.getElementById('backBtn').addEventListener('click', function () {
+      LekAudio.click(); showMenu();
+    });
+
+    var scroll = document.getElementById('advScroll');
+    var map = document.getElementById('advMap');
+    var W = scroll.clientWidth; // build the map in px so the path stays true
+
+    function px(i) { var p = advPos(i); return { x: p.x * W, y: p.y }; }
+
+    /* Land bands (with a soft lock overlay until you reach them) */
+    var html = '';
+    AREAS.forEach(function (a, ai) {
+      var firstI = -1, lastI = -1;
+      NODES.forEach(function (n, i) {
+        if (n.area !== ai) return;
+        if (firstI === -1) firstI = i;
+        lastI = i;
+      });
+      var yBot = ai === 0 ? mapH : advPos(firstI).y + ADV_SPACING / 2;
+      var yTop = ai === AREAS.length - 1 ? 0 : advPos(lastI).y - ADV_SPACING / 2;
+      var locked = !advUnlocked(adv, firstI);
+      var decor = '';
+      a.decor.forEach(function (em, k) {
+        var dx = (k * 47 + ai * 31) % 82 + 6;
+        var dy = 14 + (k * 89 + ai * 17) % Math.max(36, yBot - yTop - 58);
+        decor += '<span class="adv-decor" style="left:' + dx + '%;top:' + dy + 'px">' + em + '</span>';
+      });
+      html +=
+        '<div class="adv-band' + (locked ? ' locked' : '') + (a.dark ? ' dark' : '') + '"' +
+          ' style="top:' + yTop + 'px;height:' + (yBot - yTop) + 'px;background:' + a.sky + '">' +
+          decor +
+          '<div class="adv-area-name">' + (locked ? '🔒 ' : '') + a.emoji + ' ' + a.name + '</div>' +
+        '</div>';
+    });
+
+    /* The trail: dotted overall, solid gold up to the frontier */
+    var dFull = '', dDone = '';
+    NODES.forEach(function (_, i) {
+      var p = px(i);
+      var seg = (i ? ' L ' : 'M ') + p.x.toFixed(1) + ' ' + p.y;
+      dFull += seg;
+      if (i <= frontier) dDone += seg;
+    });
+    html +=
+      '<svg class="adv-path" width="' + W + '" height="' + mapH + '" viewBox="0 0 ' + W + ' ' + mapH + '">' +
+        '<path d="' + dFull + '" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="7" ' +
+          'stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.5 14"/>' +
+        '<path d="' + dDone + '" fill="none" stroke="#FFC53D" stroke-width="7" ' +
+          'stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.5 14"/>' +
+      '</svg>';
+
+    /* Posts */
+    NODES.forEach(function (node, i) {
+      var p = px(i);
+      var stars = adv.stars[i] || 0;
+      var unlocked = advUnlocked(adv, i);
+      var cls = 'adv-node' + (node.boss ? ' boss' : '') +
+        (stars ? ' done' : unlocked ? ' next' : ' locked');
+      var starsHtml = '';
+      if (stars) {
+        for (var k = 0; k < 3; k++) starsHtml += '<span class="' + (k < stars ? '' : 'off') + '">⭐</span>';
+      }
+      html +=
+        '<button class="' + cls + '" data-i="' + i + '" ' +
+          'style="left:' + p.x.toFixed(1) + 'px;top:' + p.y + 'px" ' +
+          'aria-label="Post ' + (i + 1) + (unlocked ? '' : ' (låst)') + '">' +
+          (node.boss ? '<span class="crown">👑</span>' : '') +
+          '<span class="face">' + (unlocked ? advNodeIcon(node) : '🔒') + '</span>' +
+          (stars ? '<span class="adv-stars">' + starsHtml + '</span>' : '') +
+        '</button>';
+    });
+
+    /* The fox stands on the frontier post */
+    var foxP = px(frontier);
+    var fromP = advFoxFrom != null ? px(advFoxFrom) : foxP;
+    html += '<div class="adv-fox" id="advFox" style="left:' + fromP.x.toFixed(1) + 'px;top:' + fromP.y + 'px">' +
+            (allDone ? '🦊🏆' : '🦊') + '</div>';
+
+    map.innerHTML = html;
+
+    /* Walk the fox onward after a fresh clear (and celebrate new lands) */
+    var startTop = Math.max(0, fromP.y - scroll.clientHeight / 2);
+    scroll.scrollTop = startTop;
+    if (advFoxFrom != null && advFoxFrom !== frontier) {
+      var newLand = NODES[frontier].area !== NODES[advFoxFrom].area;
+      var fox = document.getElementById('advFox');
+      setTimeout(function () {
+        fox.style.left = foxP.x.toFixed(1) + 'px';
+        fox.style.top = foxP.y + 'px';
+        scroll.scrollTo({ top: Math.max(0, foxP.y - scroll.clientHeight / 2), behavior: 'smooth' });
+        if (newLand) {
+          var a = AREAS[NODES[frontier].area];
+          var banner = document.createElement('div');
+          banner.className = 'adv-banner';
+          banner.textContent = 'Nytt land: ' + a.emoji + ' ' + a.name + '!';
+          scroll.parentElement.appendChild(banner);
+          LekConfetti.burst(50);
+          LekAudio.fanfare();
+          setTimeout(function () { banner.remove(); }, 2600);
+        }
+      }, 350);
+    }
+    advFoxFrom = null;
+
+    map.querySelectorAll('.adv-node').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var i = Number(btn.dataset.i);
+        if (!advUnlocked(adv, i)) {
+          LekAudio.bad();
+          btn.classList.remove('shake');
+          void btn.offsetWidth;
+          btn.classList.add('shake');
+          return;
+        }
+        LekAudio.start();
+        if (i === frontier) {
+          var fox = document.getElementById('advFox');
+          if (fox) fox.classList.add('hop');
+          setTimeout(function () { startAdventureNode(i); }, 420);
+        } else {
+          startAdventureNode(i); // replaying a cleared post
+        }
+      });
+    });
+  }
+
+  function startAdventureNode(i) {
+    var node = D.ADVENTURE.NODES[i];
+    var len = advNodeLen(node);
+    var qs;
+    if (node.mix) {
+      qs = [];
+      for (var k = 0; k < len; k++) {
+        var spec = node.mix[k % node.mix.length];
+        qs.push(LekQuestions.buildRound(spec[0], spec[1], 1)[0]);
+      }
+      for (var j = qs.length - 1; j > 0; j--) {
+        var r = ri(j + 1), t = qs[j]; qs[j] = qs[r]; qs[r] = t;
+      }
+    } else {
+      qs = LekQuestions.buildRound(node.mode, node.level, len);
+    }
+    state = {
+      mode: node.mode || 'mix',
+      level: node.level || 3,
+      len: len,
+      qs: qs,
+      i: 0,
+      score: 0,
+      streak: 0,
+      results: [],
+      firstTry: true,
+      adv: i
+    };
+    showQuestion();
+  }
+
+  function showAdventureResult() {
+    var i = state.adv, node = D.ADVENTURE.NODES[i];
+    var s = state.score, len = state.len;
+    var passed = s >= Math.ceil(len * 0.5);
+    var starCount = !passed ? 0 :
+      s >= Math.ceil(len * 0.85) ? 3 :
+      s >= Math.ceil(len * 0.6) ? 2 : 1;
+
+    var adv = advLoad();
+    var firstClear = passed && !adv.stars[i];
+    if (passed && starCount > (adv.stars[i] || 0)) {
+      adv.stars[i] = starCount;
+      advSave(adv);
+    }
+    if (firstClear) advFoxFrom = i;
+
+    var lastNode = i === D.ADVENTURE.NODES.length - 1;
+    var nextNode = lastNode ? null : D.ADVENTURE.NODES[i + 1];
+    var opensLand = firstClear && nextNode && nextNode.area !== node.area;
+
+    var msg = !passed ? 'Nesten! Prøv en gang til 💪' :
+      lastNode && firstClear ? 'Du klarte hele eventyret! 🏆👑' :
+      opensLand ? 'Du åpnet ' + D.ADVENTURE.AREAS[nextNode.area].name + '! 🎉' :
+      s === len ? 'PERFEKT! Du er en superstjerne! 🏆' :
+      'Kjempebra jobba! 🎉';
+
+    var starsHtml = '';
+    for (var k = 0; k < 3; k++) {
+      starsHtml += '<span class="' + (k < starCount ? 'lit' : '') + '">⭐</span>';
+    }
+
+    board.innerHTML =
+      '<div class="screen"><div class="result">' +
+        '<div class="result-fox' + (passed ? ' dance' : '') + '">🦊' + (passed ? '🎉' : '') + '</div>' +
+        '<h2>' + msg + '</h2>' +
+        '<div class="stars" aria-label="' + starCount + ' av 3 stjerner">' + starsHtml + '</div>' +
+        '<div class="score-line">Du klarte <strong>' + s + ' av ' + len + '</strong> på første forsøk!</div>' +
+        '<div class="btn-row">' +
+          (passed
+            ? '<button class="cta primary" id="advNextBtn">Videre på kartet! 🗺️</button>' +
+              '<button class="cta ghost" id="advRetryBtn">Spill igjen 🔁</button>'
+            : '<button class="cta primary" id="advRetryBtn">Prøv igjen! 💪</button>' +
+              '<button class="cta ghost" id="advNextBtn">Til kartet 🗺️</button>') +
+        '</div>' +
+      '</div></div>';
+
+    if (passed) {
+      LekAudio.fanfare();
+      LekConfetti.burst(60);
+      if (s === len) setTimeout(function () { LekConfetti.burst(40); }, 500);
+      if (lastNode && firstClear) LekConfetti.goldRain(3500);
+    } else {
+      LekAudio.bad();
+    }
+
+    document.getElementById('advNextBtn').addEventListener('click', function () {
+      LekAudio.click(); showAdventure();
+    });
+    document.getElementById('advRetryBtn').addEventListener('click', function () {
+      advFoxFrom = null;
+      LekAudio.start(); startAdventureNode(i);
+    });
+  }
+
   /* ---------- Result ---------- */
 
   function showResult() {
+    if (state.adv != null) { showAdventureResult(); return; }
     var s = state.score, len = state.len;
     var starCount = s >= Math.ceil(len * 0.85) ? 3 : s >= Math.ceil(len * 0.5) ? 2 : 1;
     var isRecord = saveBest(state.mode, state.level, starCount);

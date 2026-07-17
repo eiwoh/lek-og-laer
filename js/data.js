@@ -199,6 +199,47 @@ var LekData = {
   // Hour names for the clock game: index 1..12
   CLOCK_NUM: ['', 'ett', 'to', 'tre', 'fire', 'fem', 'seks', 'sju', 'åtte', 'ni', 'ti', 'elleve', 'tolv'],
 
+  // Eventyr: a winding map through themed lands. The fox walks from post
+  // to post; clearing a post unlocks the next one. Each post is a short
+  // round from an existing mode. The last post of a land is a boss (👑).
+  ADVENTURE: {
+    AREAS: [
+      { name: 'Eventyrskogen',   emoji: '🌲', sky: '#DDF3D4', decor: ['🌲', '🍄', '🦔', '🦉', '🌳', '🐿️'] },
+      { name: 'Solstranda',      emoji: '🏖️', sky: '#FFF0C4', decor: ['🌴', '🐚', '🦀', '⛱️', '🐬', '🏝️'] },
+      { name: 'Trollfjellet',    emoji: '⛰️', sky: '#E4E9F1', decor: ['🏔️', '🦅', '🐐', '🪨', '🌫️', '🧌'] },
+      { name: 'Isriket',         emoji: '❄️', sky: '#DFF2FB', decor: ['⛄', '🧊', '🐧', '❄️', '🦭', '🏔️'] },
+      { name: 'Stjernehimmelen', emoji: '🌌', sky: '#28285A', dark: true, decor: ['⭐', '🪐', '🌟', '🛸', '☄️', '🌙'] }
+    ],
+    NODES: [
+      // Eventyrskogen
+      { area: 0, mode: 'matte',   level: 1 },
+      { area: 0, mode: 'lesing',  level: 1 },
+      { area: 0, mode: 'prikk',   level: 1 },
+      { area: 0, mode: 'quiz',    level: 1, boss: true },
+      // Solstranda
+      { area: 1, mode: 'matte',   level: 2 },
+      { area: 1, mode: 'klokke',  level: 1 },
+      { area: 1, mode: 'monster', level: 1 },
+      { area: 1, mode: 'lesing',  level: 2, boss: true },
+      // Trollfjellet
+      { area: 2, mode: 'engelsk', level: 1 },
+      { area: 2, mode: 'matte',   level: 3 },
+      { area: 2, mode: 'tegne',   level: 2 },
+      { area: 2, mode: 'quiz',    level: 2, boss: true },
+      // Isriket
+      { area: 3, mode: 'klokke',  level: 2 },
+      { area: 3, mode: 'monster', level: 2 },
+      { area: 3, mode: 'engelsk', level: 2 },
+      { area: 3, mode: 'lesing',  level: 3, boss: true },
+      // Stjernehimmelen
+      { area: 4, mode: 'matte',   level: 4 },
+      { area: 4, mode: 'quiz',    level: 3 },
+      { area: 4, mode: 'engelsk', level: 3 },
+      { area: 4, boss: true, emoji: '👑',
+        mix: [['matte', 3], ['quiz', 3], ['lesing', 3], ['engelsk', 3], ['klokke', 3], ['monster', 3]] }
+    ]
+  },
+
   // Prikk til prikk: dot coordinates in a 0–100 viewBox, in tap order.
   // close: the last dot connects back to the first when done.
   SHAPES: {

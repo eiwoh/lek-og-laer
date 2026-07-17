@@ -5,6 +5,15 @@ Bygget som en helt vanlig statisk nettside — ingen byggeverktøy, ingen avheng
 
 ## Spill
 
+**🗺️ Eventyr**
+
+Et kart som slynger seg gjennom fem land: 🌲 Eventyrskogen, 🏖️ Solstranda,
+⛰️ Trollfjellet, ❄️ Isriket og 🌌 Stjernehimmelen. Reven står på neste post —
+klar posten (minst halvparten riktig), så vandrer reven videre og neste post
+låses opp. Hvert land avsluttes med en boss-post 👑, og den aller siste blander
+spørsmål fra alle spillene. Postene bruker oppgaver fra de andre spillene med
+stigende vanskelighet, og stjerner per post lagres i nettleseren.
+
 **🔢 Matte-moro**
 
 | Nivå | Innhold |
