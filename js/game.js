@@ -78,6 +78,10 @@
             '<span class="big">🇬🇧</span>' +
             '<span>Engelsk<small>Lær engelske ord</small></span>' +
           '</button>' +
+          '<button class="mode-btn penger" data-mode="penger">' +
+            '<span class="big">💰</span>' +
+            '<span>Butikk-leken<small>Hva koster mest? Lær om penger</small></span>' +
+          '</button>' +
           '<button class="mode-btn tegne" data-mode="tegne">' +
             '<span class="big">🎨</span>' +
             '<span>Tegne-leken<small>Mal over bokstaver og tall</small></span>' +
@@ -165,6 +169,15 @@
       h += '<div class="' + cls + '">' + (k < state.results.length && state.results[k] ? '⭐' : '') + '</div>';
     }
     return h + '</div>';
+  }
+
+  /* A little price tag for one shop item (used in the money word-problems) */
+  function shopChip(it) {
+    return '<span class="shop-chip">' +
+             '<span class="shop-emoji">' + it.e + '</span>' +
+             '<span class="shop-name">' + esc(it.w) + '</span>' +
+             '<span class="shop-price">' + it.p + ' kr</span>' +
+           '</span>';
   }
 
   function stageFor(q) {
@@ -258,6 +271,45 @@
           stage: '<div class="prompt">Hva er klokka?</div>' + clockSvg(q.h, q.m),
           options: q.options, cls: ' text'
         };
+      case 'costcompare':
+        return {
+          stage: '<div class="prompt">Hvilken ting koster ' +
+                   (q.most ? 'mest' : 'minst') + '? 💰</div>',
+          options: q.options,
+          optionHtml: q.items.map(function (it) {
+            return '<span class="shop-emoji">' + it.e + '</span>' +
+                   '<span class="shop-name">' + esc(it.w) + '</span>' +
+                   '<span class="shop-price">' + it.p + ' kr</span>';
+          }),
+          cls: ' shop'
+        };
+      case 'afford':
+        return {
+          stage: '<div class="prompt">Du har så mye penger:</div>' +
+                 '<div class="wallet">👛 ' + q.wallet + ' kr</div>' +
+                 '<div class="shop-card">' +
+                   '<span class="shop-emoji">' + q.item.e + '</span>' +
+                   '<span class="shop-name">' + esc(q.item.w) + '</span>' +
+                   '<span class="shop-price">' + q.item.p + ' kr</span>' +
+                 '</div>' +
+                 '<div class="prompt">Har du råd til å kjøpe den?</div>',
+          options: q.options, cls: ' text'
+        };
+      case 'moneymath':
+        if (q.op === 'total') {
+          return {
+            stage: '<div class="prompt">Hvor mye koster de til sammen? 💰</div>' +
+                   '<div class="shop-row">' + shopChip(q.a) +
+                     '<span class="shop-plus">+</span>' + shopChip(q.b) + '</div>',
+            options: q.options, cls: ''
+          };
+        }
+        return {
+          stage: '<div class="prompt">Du betaler med ' + q.paid +
+                   ' kr. Hvor mye får du igjen? 💰</div>' +
+                 '<div class="shop-row">' + shopChip(q.item) + '</div>',
+          options: q.options, cls: ''
+        };
       case 'trace':
         return {
           stage: '<div class="prompt">Mal over hele ' + (q.isDigit ? 'tallet' : 'bokstaven') + ' med fingeren! 🖌️</div>' +
@@ -342,8 +394,9 @@
       backText = '← Til menyen';
     }
 
-    var answersHtml = part.options ? part.options.map(function (o) {
-      return '<button class="ans" data-v="' + esc(o) + '">' + esc(o) + '</button>';
+    var answersHtml = part.options ? part.options.map(function (o, k) {
+      var inner = (part.optionHtml && part.optionHtml[k] != null) ? part.optionHtml[k] : esc(o);
+      return '<button class="ans" data-v="' + esc(o) + '">' + inner + '</button>';
     }).join('') : '';
 
     board.innerHTML =

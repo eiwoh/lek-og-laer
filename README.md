@@ -69,6 +69,16 @@ mange du klarer på ett minutt. Feil svar koster bare tid. Beste antall lagres s
 | 🐰 Middels | Norsk ord → engelsk ord, farger og tall |
 | 🦉 Vanskelig | Enkle quizspørsmål på engelsk |
 
+**💰 Butikk-leken**
+
+Lær om penger og priser i en liten butikk. Ting vises med prislapp i kroner.
+
+| Nivå | Innhold |
+|------|---------|
+| 🐣 Lett | To ting – hva koster mest? |
+| 🐰 Middels | Tre ting – hva koster mest eller minst? |
+| 🦉 Vanskelig | Har du råd? Legg sammen priser, og hvor mye får du igjen? |
+
 **🎨 Tegne-leken**
 
 Mal over en stor stiplet bokstav eller et tall med regnbuepensel (fungerer med

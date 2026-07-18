@@ -14,6 +14,9 @@
      pattern  — number sequence, choose what comes next
      trace    — paint over a letter/number stencil (no answer buttons)
      dots     — connect-the-dots picture (no answer buttons)
+     costcompare — two/three priced things, pick the dearest/cheapest
+     afford      — a wallet and a price, can you afford it? (Ja/Nei)
+     moneymath   — add two prices, or work out the change (numeric options)
 */
 
 var LekQuestions = (function () {
@@ -438,6 +441,99 @@ var LekQuestions = (function () {
     });
   }
 
+  /* ---------- Butikk-leken (money) ----------
+     Level 1: two cheap things — which costs the most?
+     Level 2: three things — most or least expensive.
+     Level 3: can you afford it, add two prices, or work out the change. */
+
+  function moneyPool(loP, hiP) {
+    return D.MONEY.ITEMS.filter(function (x) { return x.p >= loP && x.p <= hiP; });
+  }
+
+  /* k things with distinct prices, so "mest"/"minst" has one clear answer. */
+  function pickPricedItems(pool, k) {
+    var order = shuffle(pool), chosen = [], usedP = [];
+    for (var i = 0; i < order.length && chosen.length < k; i++) {
+      if (usedP.indexOf(order[i].p) === -1) { chosen.push(order[i]); usedP.push(order[i].p); }
+    }
+    return chosen;
+  }
+
+  function qCostCompare(pool, count, most) {
+    var items = pickPricedItems(pool, count);
+    var target = items[0];
+    items.forEach(function (it) {
+      if (most ? it.p > target.p : it.p < target.p) target = it;
+    });
+    return {
+      kind: 'costcompare', most: most, items: items,
+      answer: target.w,
+      options: items.map(function (it) { return it.w; })
+    };
+  }
+
+  function qAfford(pool) {
+    var item = pick(pool);
+    var wallet;
+    if (ri(2)) {                       // give enough (sometimes exactly enough)
+      wallet = item.p + 5 * ri(6);
+    } else {                           // give too little
+      wallet = Math.max(1, item.p - 5 * (1 + ri(5)));
+    }
+    var yes = wallet >= item.p;
+    return {
+      kind: 'afford', item: item, wallet: wallet,
+      answer: yes ? 'Ja 👍' : 'Nei 👎',
+      options: ['Ja 👍', 'Nei 👎']
+    };
+  }
+
+  function qMoneyTotal(pool) {
+    var items = pickPricedItems(pool, 2);
+    return {
+      kind: 'moneymath', op: 'total', a: items[0], b: items[1],
+      answer: items[0].p + items[1].p
+    };
+  }
+
+  function qMoneyChange(pool) {
+    var item = pick(pool);
+    var denoms = [5, 10, 20, 50, 100, 200, 500, 1000];
+    var paid = denoms[denoms.length - 1];
+    for (var i = 0; i < denoms.length; i++) {
+      if (denoms[i] > item.p) { paid = denoms[i]; break; }
+    }
+    return {
+      kind: 'moneymath', op: 'change', item: item, paid: paid,
+      answer: paid - item.p
+    };
+  }
+
+  function moneyRound(level, n) {
+    var qs = [], i;
+    if (level === 1) {
+      var pool1 = moneyPool(1, 30);
+      for (i = 0; i < n; i++) qs.push(qCostCompare(pool1, 2, true));
+    } else if (level === 2) {
+      var pool2 = moneyPool(1, 200);
+      for (i = 0; i < n; i++) qs.push(qCostCompare(pool2, 3, ri(10) < 6));
+    } else {
+      var poolAfford = moneyPool(1, 150);
+      var poolTotal = moneyPool(1, 30);
+      var poolChange = moneyPool(1, 100);
+      for (i = 0; i < n; i++) {
+        var r = ri(9);
+        qs.push(r < 3 ? qAfford(poolAfford) :
+                r < 6 ? qMoneyTotal(poolTotal) :
+                        qMoneyChange(poolChange));
+      }
+    }
+    qs.forEach(function (q) {
+      if (q.kind === 'moneymath') q.options = numOptions(q.answer);
+    });
+    return qs;
+  }
+
   function clockRound(level, n) {
     var variants = level === 1 ? ['hel'] :
                    level === 2 ? ['hel', 'halv'] :
@@ -457,6 +553,7 @@ var LekQuestions = (function () {
         case 'quiz':    return triviaRound(level, n);
         case 'klokke':  return clockRound(level, n);
         case 'engelsk': return englishRound(level, n);
+        case 'penger':  return moneyRound(level, n);
         case 'tegne':   return traceRound(level, n);
         case 'prikk':   return dotsRound(level, n);
       }
