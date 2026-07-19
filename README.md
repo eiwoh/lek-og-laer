@@ -106,6 +106,21 @@ Hver runde har 10 spørsmål (Tegne-leken og Prikk til prikk har 4, Regne-racer 
 ett minutt). Riktig svar på første forsøk gir en stjerne — feil svar er ufarlig, man
 bare prøver igjen. Beste resultat per nivå lagres i nettleseren (localStorage).
 
+## 🎨 Mitt utseende
+
+Palett-knappen 🎨 øverst til høyre åpner «Mitt utseende», der barnet lager sin
+egen stil:
+
+- **Bakgrunn** – seks looks som tinter hele spillet: ☀️ Solskinn, 🌙 Natt,
+  🚀 Rommet, 🍭 Godteri, 🌊 Hav og 🌴 Jungel. Natt og Rommet gjør sola om til
+  en måne. Kortene holder seg lyse så alt fortsatt er lett å lese.
+- **Figur** – bytt ut reven med en av tolv figurer (🐱 🐶 🐰 🐻 🐼 🦁 🐸 🦄 🐧 🐵 🐨 …).
+  Figuren følger med i menyen, under spillet, på kartet og i feiringen.
+
+Valgene tar effekt med en gang og lagres i nettleseren, så spillet ser likt ut
+neste gang. Nye looks legges til i `THEMES` (og en matchende `body[data-theme=…]`
+i CSS-en), nye figurer i `MASCOTS` — begge øverst i `js/game.js`.
+
 ## Kjøre spillet
 
 Åpne `index.html` direkte i nettleseren (dobbeltklikk), eller kjør en liten server:

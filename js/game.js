@@ -35,6 +35,99 @@
     return h;
   }
 
+  /* ---------- Mitt utseende (looks & mascot) ----------
+     The kid can re-skin the whole game: a background "look" (re-tints the
+     sky/grass/outlines via a data-theme on <body>) and a mascot figure that
+     stands in for the fox everywhere. Both are saved so it stays their own. */
+
+  var LOOK_KEY = 'lekOgLaerLook';
+
+  var THEMES = [
+    { id: 'sol',     name: 'Solskinn', emoji: '☀️', sky: ['#8ED8F8', '#CDEFFD'] },
+    { id: 'natt',    name: 'Natt',     emoji: '🌙', sky: ['#1B2A4A', '#3A4670'] },
+    { id: 'rom',     name: 'Rommet',   emoji: '🚀', sky: ['#241145', '#4A2472'] },
+    { id: 'godteri', name: 'Godteri',  emoji: '🍭', sky: ['#FF9ECF', '#FFD9EE'] },
+    { id: 'hav',     name: 'Hav',      emoji: '🌊', sky: ['#6FCFE8', '#BDECF5'] },
+    { id: 'jungel',  name: 'Jungel',   emoji: '🌴', sky: ['#8FCB63', '#CDE9A3'] }
+  ];
+  var MASCOTS = ['🦊', '🐱', '🐶', '🐰', '🐻', '🐼', '🦁', '🐸', '🦄', '🐧', '🐵', '🐨'];
+
+  var look = { theme: 'sol', mascot: '🦊' };
+
+  function themeExists(id) {
+    for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return true;
+    return false;
+  }
+
+  function loadLook() {
+    var l = {};
+    try { l = JSON.parse(localStorage.getItem(LOOK_KEY)) || {}; } catch (e) { /* private mode */ }
+    return {
+      theme: themeExists(l.theme) ? l.theme : 'sol',
+      mascot: MASCOTS.indexOf(l.mascot) >= 0 ? l.mascot : '🦊'
+    };
+  }
+  function saveLook() {
+    try { localStorage.setItem(LOOK_KEY, JSON.stringify(look)); } catch (e) { /* private mode */ }
+  }
+  function applyLook() {
+    document.body.setAttribute('data-theme', look.theme);
+  }
+  function mascot() { return look.mascot; }
+
+  function showLooks() {
+    state = null;
+    var html =
+      '<div class="screen">' +
+        '<div class="top-row">' +
+          '<button class="back-link" id="backBtn">← Tilbake</button>' +
+          '<span class="chip">🎨 Mitt utseende</span>' +
+        '</div>' +
+        '<div class="look-hero" id="lookHero">' + look.mascot + '</div>' +
+        '<div class="level-sub">Lag din helt egen stil! ✨</div>' +
+        '<div class="look-section">Bakgrunn</div>' +
+        '<div class="look-grid" id="themeGrid">';
+    THEMES.forEach(function (t) {
+      html +=
+        '<button class="look-swatch' + (t.id === look.theme ? ' sel' : '') + '" data-theme="' + t.id + '" ' +
+          'style="background:linear-gradient(160deg,' + t.sky[0] + ',' + t.sky[1] + ')" ' +
+          'aria-label="' + t.name + '">' +
+          '<span class="look-emoji">' + t.emoji + '</span>' +
+          '<span class="look-name">' + t.name + '</span>' +
+        '</button>';
+    });
+    html += '</div>' +
+        '<div class="look-section">Din figur</div>' +
+        '<div class="mascot-grid" id="mascotGrid">';
+    MASCOTS.forEach(function (mc) {
+      html += '<button class="mascot-pick' + (mc === look.mascot ? ' sel' : '') + '" data-mc="' + mc + '">' + mc + '</button>';
+    });
+    html += '</div></div>';
+    board.innerHTML = html;
+
+    document.getElementById('backBtn').addEventListener('click', function () {
+      LekAudio.click(); showMenu();
+    });
+    board.querySelectorAll('.look-swatch').forEach(function (b) {
+      b.addEventListener('click', function () {
+        look.theme = b.dataset.theme;
+        applyLook(); saveLook(); LekAudio.good();
+        board.querySelectorAll('.look-swatch').forEach(function (x) { x.classList.remove('sel'); });
+        b.classList.add('sel');
+      });
+    });
+    board.querySelectorAll('.mascot-pick').forEach(function (b) {
+      b.addEventListener('click', function () {
+        look.mascot = b.dataset.mc;
+        saveLook(); LekAudio.good();
+        board.querySelectorAll('.mascot-pick').forEach(function (x) { x.classList.remove('sel'); });
+        b.classList.add('sel');
+        var hero = document.getElementById('lookHero');
+        if (hero) hero.textContent = look.mascot;
+      });
+    });
+  }
+
   /* ---------- Menu ---------- */
 
   function showMenu() {
@@ -42,8 +135,8 @@
     board.innerHTML =
       '<div class="screen">' +
         '<div class="mascot-row">' +
-          '<div class="mascot">🦊</div>' +
-          '<div class="bubble">Hei! Jeg heter Rev. Hva vil du leke i dag?</div>' +
+          '<div class="mascot">' + mascot() + '</div>' +
+          '<div class="bubble">Hei! Hva vil du leke i dag?</div>' +
         '</div>' +
         '<div class="menu">' +
           '<button class="mode-btn eventyr" data-mode="eventyr">' +
@@ -406,7 +499,7 @@
           '<span class="chip">' + chip + '</span>' +
         '</div>' +
         '<div class="hud">' +
-          '<span class="hud-fox" id="hudFox">🦊</span>' +
+          '<span class="hud-fox" id="hudFox">' + mascot() + '</span>' +
           dotsHtml() +
           '<div class="streak">' + (state.streak >= 3 ? '🔥 ' + state.streak + ' på rad!' : '') + '</div>' +
         '</div>' +
@@ -852,7 +945,7 @@
     var foxP = px(frontier);
     var fromP = advFoxFrom != null ? px(advFoxFrom) : foxP;
     html += '<div class="adv-fox" id="advFox" style="left:' + fromP.x.toFixed(1) + 'px;top:' + fromP.y + 'px">' +
-            (allDone ? '🦊🏆' : '🦊') + '</div>';
+            (allDone ? mascot() + '🏆' : mascot()) + '</div>';
 
     map.innerHTML = html;
 
@@ -966,7 +1059,7 @@
 
     board.innerHTML =
       '<div class="screen"><div class="result">' +
-        '<div class="result-fox' + (passed ? ' dance' : '') + '">🦊' + (passed ? '🎉' : '') + '</div>' +
+        '<div class="result-fox' + (passed ? ' dance' : '') + '">' + mascot() + (passed ? '🎉' : '') + '</div>' +
         '<h2>' + msg + '</h2>' +
         '<div class="stars" aria-label="' + starCount + ' av 3 stjerner">' + starsHtml + '</div>' +
         '<div class="score-line">Du klarte <strong>' + s + ' av ' + len + '</strong> på første forsøk!</div>' +
@@ -1019,7 +1112,7 @@
 
     board.innerHTML =
       '<div class="screen"><div class="result">' +
-        '<div class="result-fox' + (s >= 7 ? ' dance' : '') + '">🦊' + (s >= 7 ? '🎉' : '') + '</div>' +
+        '<div class="result-fox' + (s >= 7 ? ' dance' : '') + '">' + mascot() + (s >= 7 ? '🎉' : '') + '</div>' +
         '<h2>' + msg + '</h2>' +
         '<div class="stars" aria-label="' + starCount + ' av 3 stjerner">' + starsHtml + '</div>' +
         (isRecord ? '<div class="record">Ny rekord! 🏅</div>' : '') +
@@ -1130,7 +1223,7 @@
           '<span class="chip">⚡ ' + lvl.icon + ' ' + lvl.name + '</span>' +
         '</div>' +
         '<div class="hud">' +
-          '<span class="hud-fox" id="hudFox">🦊</span>' +
+          '<span class="hud-fox" id="hudFox">' + mascot() + '</span>' +
           '<span class="timer' + (state.timeLeft <= 10 ? ' low' : '') + '" id="timer">⏱️ ' + state.timeLeft + '</span>' +
           '<span class="race-score">⭐ ' + state.score + '</span>' +
         '</div>' +
@@ -1186,7 +1279,7 @@
 
     board.innerHTML =
       '<div class="screen"><div class="result">' +
-        '<div class="result-fox' + (s >= 8 ? ' dance' : '') + '">🦊' + (s >= 8 ? '🏁' : '') + '</div>' +
+        '<div class="result-fox' + (s >= 8 ? ' dance' : '') + '">' + mascot() + (s >= 8 ? '🏁' : '') + '</div>' +
         '<h2>' + msg + '</h2>' +
         '<div class="stars" aria-label="' + starCount + ' av 3 stjerner">' + starsHtml + '</div>' +
         (raceBest.record ? '<div class="record">Ny rekord! 🏅</div>' : '') +
@@ -1224,5 +1317,13 @@
     if (on) LekAudio.click();
   });
 
+  document.getElementById('lookBtn').addEventListener('click', function () {
+    LekAudio.click(); showLooks();
+  });
+
+  /* ---------- Boot ---------- */
+
+  look = loadLook();
+  applyLook();
   showMenu();
 })();
