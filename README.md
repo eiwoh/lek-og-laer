@@ -106,6 +106,22 @@ Hver runde har 10 spørsmål (Tegne-leken og Prikk til prikk har 4, Regne-racer 
 ett minutt). Riktig svar på første forsøk gir en stjerne — feil svar er ufarlig, man
 bare prøver igjen. Beste resultat per nivå lagres i nettleseren (localStorage).
 
+## 🏆 Min samling
+
+Pokal-knappen 🏆 øverst til høyre åpner «Min samling», som samler **alle**
+stjerner barnet har fått — både i de vanlige lekene og på Eventyr-kartet:
+
+- **Totalt stjernetall** med en figur på toppen.
+- **Pokaler** som lyser opp når man passerer milepæler (🥉 5, 🥈 15, 🥇 30,
+  🏆 50, 👑 80, 💎 120 stjerner), med en teller for hvor mange som mangler til
+  den neste.
+- **Stjerner per lek** — en liten framdriftslinje for hver lek (fått / mulig).
+
+Det samme totale stjernetallet låser opp **bonusfigurer** i «Mitt utseende»
+(🐯 10, 🐷 20, 🐙 30, 🐝 45, 🦖 60, 🐉 80 stjerner). Å spille hva som helst er
+altså framgang mot alt. Nye milepæler ligger i `MILESTONES` og nye bonusfigurer
+i `BONUS_MASCOTS` — begge øverst i `js/game.js`.
+
 ## 🎨 Mitt utseende
 
 Palett-knappen 🎨 øverst til høyre åpner «Mitt utseende», der barnet lager sin
@@ -115,7 +131,9 @@ egen stil:
   🚀 Rommet, 🍭 Godteri, 🌊 Hav og 🌴 Jungel. Natt og Rommet gjør sola om til
   en måne. Kortene holder seg lyse så alt fortsatt er lett å lese.
 - **Figur** – bytt ut reven med en av tolv figurer (🐱 🐶 🐰 🐻 🐼 🦁 🐸 🦄 🐧 🐵 🐨 …).
-  Figuren følger med i menyen, under spillet, på kartet og i feiringen.
+  Figuren følger med i menyen, under spillet, på kartet og i feiringen. Seks
+  ekstra bonusfigurer står låst med et 🔒 til du har samlet nok stjerner (se
+  [🏆 Min samling](#-min-samling)).
 
 Valgene tar effekt med en gang og lagres i nettleseren, så spillet ser likt ut
 neste gang. Nye looks legges til i `THEMES` (og en matchende `body[data-theme=…]`

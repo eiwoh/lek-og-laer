@@ -52,11 +52,25 @@
   ];
   var MASCOTS = ['🦊', '🐱', '🐶', '🐰', '🐻', '🐼', '🦁', '🐸', '🦄', '🐧', '🐵', '🐨'];
 
+  /* Bonus figures the kid earns by collecting stars across every game. They
+     stay locked (🔒) in the picker until the star total reaches `need`. */
+  var BONUS_MASCOTS = [
+    { mc: '🐯', need: 10 },
+    { mc: '🐷', need: 20 },
+    { mc: '🐙', need: 30 },
+    { mc: '🐝', need: 45 },
+    { mc: '🦖', need: 60 },
+    { mc: '🐉', need: 80 }
+  ];
+
   var look = { theme: 'sol', mascot: '🦊' };
 
   function themeExists(id) {
     for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return true;
     return false;
+  }
+  function allMascots() {
+    return MASCOTS.concat(BONUS_MASCOTS.map(function (b) { return b.mc; }));
   }
 
   function loadLook() {
@@ -64,7 +78,7 @@
     try { l = JSON.parse(localStorage.getItem(LOOK_KEY)) || {}; } catch (e) { /* private mode */ }
     return {
       theme: themeExists(l.theme) ? l.theme : 'sol',
-      mascot: MASCOTS.indexOf(l.mascot) >= 0 ? l.mascot : '🦊'
+      mascot: allMascots().indexOf(l.mascot) >= 0 ? l.mascot : '🦊'
     };
   }
   function saveLook() {
@@ -96,13 +110,24 @@
           '<span class="look-name">' + t.name + '</span>' +
         '</button>';
     });
+    var earned = totalStars();
     html += '</div>' +
         '<div class="look-section">Din figur</div>' +
         '<div class="mascot-grid" id="mascotGrid">';
     MASCOTS.forEach(function (mc) {
       html += '<button class="mascot-pick' + (mc === look.mascot ? ' sel' : '') + '" data-mc="' + mc + '">' + mc + '</button>';
     });
-    html += '</div></div>';
+    BONUS_MASCOTS.forEach(function (b) {
+      if (earned >= b.need) {
+        html += '<button class="mascot-pick' + (b.mc === look.mascot ? ' sel' : '') + '" data-mc="' + b.mc + '">' + b.mc + '</button>';
+      } else {
+        html += '<button class="mascot-pick locked" disabled aria-label="Lås opp med ' + b.need + ' stjerner">' +
+          '<span class="lock">🔒</span><span class="lock-need">' + b.need + '⭐</span></button>';
+      }
+    });
+    html += '</div>' +
+        '<div class="level-sub">Samle stjerner for å låse opp flere figurer! 🏆</div>' +
+      '</div>';
     board.innerHTML = html;
 
     document.getElementById('backBtn').addEventListener('click', function () {
@@ -116,7 +141,7 @@
         b.classList.add('sel');
       });
     });
-    board.querySelectorAll('.mascot-pick').forEach(function (b) {
+    board.querySelectorAll('.mascot-pick[data-mc]').forEach(function (b) {
       b.addEventListener('click', function () {
         look.mascot = b.dataset.mc;
         saveLook(); LekAudio.good();
@@ -125,6 +150,95 @@
         var hero = document.getElementById('lookHero');
         if (hero) hero.textContent = look.mascot;
       });
+    });
+  }
+
+  /* ---------- Min samling (star collection & trophies) ----------
+     Every star the kid has ever earned — in the levelled games and on the
+     Eventyr map — adds up here. Passing star milestones lights up trophies,
+     and the same total is what unlocks the bonus figures in Mitt utseende,
+     so playing anything is progress toward everything. */
+
+  var MILESTONES = [
+    { need: 5,   emoji: '🥉', name: 'Bronse' },
+    { need: 15,  emoji: '🥈', name: 'Sølv' },
+    { need: 30,  emoji: '🥇', name: 'Gull' },
+    { need: 50,  emoji: '🏆', name: 'Pokal' },
+    { need: 80,  emoji: '👑', name: 'Krone' },
+    { need: 120, emoji: '💎', name: 'Diamant' }
+  ];
+
+  function totalStars() {
+    var best = loadBest(), t = 0, k;
+    for (k in best) if (best.hasOwnProperty(k)) t += best[k] || 0;
+    var adv = advLoad();
+    D.ADVENTURE.NODES.forEach(function (_, i) { t += adv.stars[i] || 0; });
+    return t;
+  }
+  function modeStars(mode) {
+    var best = loadBest(), got = 0, levels = D.MODES[mode].levels || 3;
+    for (var lvl = 1; lvl <= levels; lvl++) got += best[mode + '-' + lvl] || 0;
+    return got;
+  }
+  function modeStatHtml(icon, name, got, max) {
+    var pct = max ? Math.round(got / max * 100) : 0;
+    return '<div class="mode-stat">' +
+        '<span class="ms-icon">' + icon + '</span>' +
+        '<span class="ms-body">' +
+          '<span class="ms-name">' + esc(name) + '</span>' +
+          '<span class="ms-bar"><span class="ms-fill" style="width:' + pct + '%"></span></span>' +
+        '</span>' +
+        '<span class="ms-count">' + got + '/' + max + '</span>' +
+      '</div>';
+  }
+
+  function showCollection() {
+    state = null;
+    var total = totalStars();
+    var next = null;
+    for (var i = 0; i < MILESTONES.length; i++) {
+      if (total < MILESTONES[i].need) { next = MILESTONES[i]; break; }
+    }
+
+    var html =
+      '<div class="screen">' +
+        '<div class="top-row">' +
+          '<button class="back-link" id="backBtn">← Tilbake</button>' +
+          '<span class="chip">🏆 Min samling</span>' +
+        '</div>' +
+        '<div class="look-hero">' + mascot() + '</div>' +
+        '<div class="coll-total">Du har samlet <span class="num">' + total + '</span> ⭐</div>' +
+        '<div class="level-sub">' +
+          (next ? ('Bare ' + (next.need - total) + ' til for ' + next.emoji + ' ' + next.name + '!')
+                : 'Wow — du har vunnet alle pokalene! 🎉') +
+        '</div>' +
+        '<div class="look-section">Pokaler</div>' +
+        '<div class="trophy-row">';
+    MILESTONES.forEach(function (m) {
+      html += '<div class="trophy' + (total >= m.need ? '' : ' off') + '">' +
+          '<span class="t-emoji">' + m.emoji + '</span>' +
+          '<span class="t-need">' + m.need + '⭐</span>' +
+        '</div>';
+    });
+    html += '</div>' +
+        '<div class="look-section">Stjerner per lek</div>' +
+        '<div class="mode-stats">';
+
+    var adv = advLoad(), advGot = 0, advMax = D.ADVENTURE.NODES.length * 3;
+    D.ADVENTURE.NODES.forEach(function (_, i) { advGot += adv.stars[i] || 0; });
+    html += modeStatHtml('🗺️', 'Eventyr', advGot, advMax);
+
+    ['matte', 'racer', 'monster', 'lesing', 'quiz', 'klokke', 'engelsk', 'penger', 'tegne', 'prikk']
+      .forEach(function (mode) {
+        var m = D.MODES[mode];
+        html += modeStatHtml(m.icon, m.title, modeStars(mode), (m.levels || 3) * 3);
+      });
+
+    html += '</div></div>';
+    board.innerHTML = html;
+
+    document.getElementById('backBtn').addEventListener('click', function () {
+      LekAudio.click(); showMenu();
     });
   }
 
@@ -1319,6 +1433,10 @@
 
   document.getElementById('lookBtn').addEventListener('click', function () {
     LekAudio.click(); showLooks();
+  });
+
+  document.getElementById('pokalBtn').addEventListener('click', function () {
+    LekAudio.click(); showCollection();
   });
 
   /* ---------- Boot ---------- */
