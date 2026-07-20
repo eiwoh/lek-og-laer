@@ -228,7 +228,7 @@
     D.ADVENTURE.NODES.forEach(function (_, i) { advGot += adv.stars[i] || 0; });
     html += modeStatHtml('🗺️', 'Eventyr', advGot, advMax);
 
-    ['matte', 'racer', 'monster', 'lesing', 'quiz', 'klokke', 'engelsk', 'penger', 'tegne', 'prikk']
+    ['matte', 'racer', 'monster', 'lesing', 'quiz', 'klokke', 'engelsk', 'penger', 'tegne', 'prikk', 'kode']
       .forEach(function (mode) {
         var m = D.MODES[mode];
         html += modeStatHtml(m.icon, m.title, modeStars(mode), (m.levels || 3) * 3);
@@ -296,6 +296,10 @@
           '<button class="mode-btn prikk" data-mode="prikk">' +
             '<span class="big">✏️</span>' +
             '<span>Prikk til prikk<small>Tegn streker fra tall til tall</small></span>' +
+          '</button>' +
+          '<button class="mode-btn kode" data-mode="kode">' +
+            '<span class="big">🤖</span>' +
+            '<span>Kode-roboten<small>Programmer roboten fram til målet!</small></span>' +
           '</button>' +
         '</div>' +
       '</div>';
@@ -534,7 +538,43 @@
                  '</div>' + dotsSvg(q),
           options: null, cls: ''
         };
+      case 'robot':
+        return {
+          stage: '<div class="prompt">' +
+                   (q.steps > 1
+                     ? 'Velg riktig program så roboten 🤖 kjører til ' + q.goalEmoji + '!'
+                     : 'Hvilken vei skal roboten 🤖 kjøre til ' + q.goalEmoji + '?') +
+                 '</div>' + robotGridHtml(q),
+          options: q.options, optionHtml: q.optionHtml, cls: ' robot'
+        };
     }
+  }
+
+  /* The robot's playfield: a grid of cells with the goal and the robot
+     placed by percentage so they can be animated with a CSS transition. */
+  function robotCellStyle(q, cx, cy) {
+    return 'left:' + ((cx + 0.5) / q.cols * 100).toFixed(2) + '%;' +
+           'top:' + ((cy + 0.5) / q.rows * 100).toFixed(2) + '%';
+  }
+
+  function robotGridHtml(q) {
+    var cells = '';
+    for (var r = 0; r < q.rows; r++) {
+      for (var c = 0; c < q.cols; c++) {
+        cells += '<span class="rb-cell' + ((c + r) % 2 ? ' alt' : '') + '"></span>';
+      }
+    }
+    return '<div class="robot-wrap">' +
+        '<div class="robot-grid" id="robotGrid" style="' +
+          'grid-template-columns:repeat(' + q.cols + ',1fr);' +
+          'grid-template-rows:repeat(' + q.rows + ',1fr);' +
+          'aspect-ratio:' + q.cols + ' / ' + q.rows + '">' +
+          cells +
+          '<span class="robot-goal" style="' + robotCellStyle(q, q.goal[0], q.goal[1]) + '">' + q.goalEmoji + '</span>' +
+          '<span class="robot-bot" id="robotBot" style="' + robotCellStyle(q, q.start[0], q.start[1]) + '">🤖</span>' +
+          '<span class="robot-boom" id="robotBoom">💥</span>' +
+        '</div>' +
+      '</div>';
   }
 
   /* Connect-the-dots board as inline SVG */
@@ -629,6 +669,7 @@
     });
     if (q.kind === 'trace') initTrace(q);
     else if (q.kind === 'dots') initDots(q);
+    else if (q.kind === 'robot') initRobot(q);
     else board.querySelectorAll('.ans').forEach(function (b) {
       b.addEventListener('click', function () { answer(b, q); });
     });
@@ -912,6 +953,87 @@
           LekAudio.bad();
           foxReact('sad');
         }
+      });
+    });
+  }
+
+  /* ---------- Kode-roboten ----------
+     Drive the robot with the chosen command(s). It always animates — a
+     right answer glides onto the goal; a wrong one drives off, crashes
+     (💥) and reverses back so the child can try another command. */
+
+  function initRobot(q) {
+    var grid = document.getElementById('robotGrid');
+    var bot = document.getElementById('robotBot');
+    var boom = document.getElementById('robotBoom');
+    if (!grid || !bot) return;
+    var MOVE_MS = 420;
+    var busy = false;
+
+    function place(el, cx, cy) {
+      el.style.left = ((cx + 0.5) / q.cols * 100).toFixed(2) + '%';
+      el.style.top = ((cy + 0.5) / q.rows * 100).toFixed(2) + '%';
+    }
+
+    /* Walk the robot through a command list. cb(reachedGoal) fires when it
+       stops — either on the goal, or where it crashed. */
+    function run(cmds, cb) {
+      var c = q.start[0], r = q.start[1], i = 0;
+      (function step() {
+        if (i >= cmds.length) {
+          cb(c === q.goal[0] && r === q.goal[1]);
+          return;
+        }
+        var d = cmds[i++];
+        var nc = c + d[0], nr = r + d[1];
+        if (nc < 0 || nc >= q.cols || nr < 0 || nr >= q.rows) {
+          place(bot, c + d[0] * 0.5, r + d[1] * 0.5); // bump into the wall
+          setTimeout(function () { cb(false); }, MOVE_MS);
+          return;
+        }
+        c = nc; r = nr;
+        place(bot, c, r);
+        setTimeout(step, MOVE_MS);
+      })();
+    }
+
+    board.querySelectorAll('.ans').forEach(function (btn, idx) {
+      btn.addEventListener('click', function () {
+        if (busy || btn.disabled) return;
+        busy = true;
+        run(q.commands[idx], function (reached) {
+          if (!state) return; // player left mid-drive
+          if (reached) {
+            btn.classList.add('good');
+            board.querySelectorAll('.ans').forEach(function (b) { b.disabled = true; });
+            bot.classList.add('cheer');
+            finishDrawing(state.firstTry, pick(D.PRAISE) + ' 🤖', 1300);
+          } else {
+            state.firstTry = false;
+            btn.classList.add('bad');
+            btn.disabled = true;
+            if (boom) {
+              boom.style.left = bot.style.left;
+              boom.style.top = bot.style.top;
+              boom.classList.remove('show');
+              void boom.offsetWidth; // restart the pop
+              boom.classList.add('show');
+            }
+            bot.classList.remove('crash');
+            void bot.offsetWidth;
+            bot.classList.add('crash');
+            LekAudio.bad();
+            foxReact('sad');
+            var fb = document.getElementById('fb');
+            if (fb) { fb.textContent = pick(D.NUDGE); fb.className = 'feedback oops'; }
+            setTimeout(function () {
+              if (boom) boom.classList.remove('show');
+              bot.classList.remove('crash');
+              place(bot, q.start[0], q.start[1]); // reverse back to start
+              setTimeout(function () { busy = false; }, MOVE_MS);
+            }, 780);
+          }
+        });
       });
     });
   }

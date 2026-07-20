@@ -270,6 +270,7 @@ header.top {
 .mode-btn:nth-child(9) { animation-delay: .64s; }
 .mode-btn:nth-child(10) { animation-delay: .72s; }
 .mode-btn:nth-child(11) { animation-delay: .8s; }
+.mode-btn:nth-child(12) { animation-delay: .88s; }
 .mode-btn small { display: block; font-weight: 600; font-size: 14px; color: var(--ink-soft); }
 .mode-btn .big { font-size: 32px; }
 .mode-btn.eventyr {
@@ -286,6 +287,7 @@ header.top {
 .mode-btn.penger { background: #D7F0CE; box-shadow: 0 7px 0 #4E9A2E; }
 .mode-btn.tegne  { background: #FFE3C9; box-shadow: 0 7px 0 #C96B2F; }
 .mode-btn.prikk  { background: #EAF7C5; box-shadow: 0 7px 0 #7C9B2D; }
+.mode-btn.kode   { background: #D8ECF0; box-shadow: 0 7px 0 #3A7E8C; }
 .mode-btn:hover { transform: translateY(-2px) rotate(-.5deg); }
 .mode-btn:active { transform: translateY(5px); box-shadow: 0 2px 0 var(--card-edge); }
 
@@ -667,6 +669,81 @@ header.top {
   40%, 80% { transform: translateX(3px); }
 }
 .ds-emoji { animation: pop .6s; }
+
+/* ============ Kode-roboten ============ */
+
+.robot-wrap {
+  width: min(320px, 74vw);
+  padding: 12px;                 /* room for the robot to bump the walls */
+  animation: pop .4s;
+}
+.robot-grid {
+  position: relative;
+  display: grid; width: 100%;
+  background: #EAF3D9;
+  border: 4px solid var(--card-edge); border-radius: 20px;
+  box-shadow: 0 6px 0 rgba(23, 57, 92, .35);
+  overflow: visible;
+}
+.rb-cell { border: 1px dashed rgba(23, 57, 92, .14); }
+.rb-cell.alt { background: rgba(255, 255, 255, .38); }
+
+.robot-goal, .robot-bot, .robot-boom {
+  position: absolute; transform: translate(-50%, -50%);
+  line-height: 1; pointer-events: none;
+}
+.robot-goal {
+  font-size: clamp(28px, 8.5vw, 38px);
+  filter: drop-shadow(0 2px 0 rgba(23, 57, 92, .2));
+  animation: rb-goal 1.1s ease-in-out infinite alternate;
+}
+@keyframes rb-goal { to { transform: translate(-50%, -62%) scale(1.12); } }
+
+.robot-bot {
+  font-size: clamp(30px, 9.5vw, 42px); z-index: 2;
+  filter: drop-shadow(0 3px 2px rgba(23, 57, 92, .3));
+  transition: left .4s cubic-bezier(.34, 1.32, .5, 1),
+              top .4s cubic-bezier(.34, 1.32, .5, 1);
+}
+.robot-bot.cheer { animation: rb-cheer .55s ease-in-out 2; }
+@keyframes rb-cheer {
+  25% { transform: translate(-50%, -74%) rotate(-12deg); }
+  75% { transform: translate(-50%, -74%) rotate(12deg); }
+}
+.robot-bot.crash { animation: rb-crash .38s; }
+@keyframes rb-crash {
+  20%, 60% { transform: translate(-60%, -50%) rotate(-9deg); }
+  40%, 80% { transform: translate(-40%, -50%) rotate(9deg); }
+}
+
+.robot-boom {
+  font-size: clamp(32px, 10vw, 46px); z-index: 3;
+  opacity: 0; transform: translate(-50%, -50%) scale(.2);
+}
+.robot-boom.show { animation: rb-boom .7s ease-out; }
+@keyframes rb-boom {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(.2); }
+  30%  { opacity: 1; transform: translate(-50%, -50%) scale(1.25); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.45); }
+}
+
+/* Command buttons (arrows, with a name on the single-step levels) */
+.answers.robot {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 320px; margin-left: auto; margin-right: auto;
+}
+.answers.robot .ans {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 8px; font-size: 30px; letter-spacing: 0;
+}
+.answers.robot .rb-arrow { font-size: 30px; line-height: 1.1; }
+.answers.robot .rb-prog {
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.answers.robot .rb-step { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+.answers.robot .ans.good .rb-step { color: #fff; }
+.answers.robot .ans small { font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+.answers.robot .ans.good small { color: #fff; }
 
 .answers {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;

@@ -347,6 +347,13 @@ var LekData = {
     ]
   },
 
+  // Kode-roboten: a tiny "learn to code" game. A robot 🤖 sits on a grid and
+  // the child picks the command(s) that drive it onto the goal. GOALS are the
+  // treasures the robot drives toward; one is chosen at random per question.
+  ROBOT: {
+    GOALS: ['⭐', '🍎', '🎁', '🍌', '🍓', '🧀', '🍩', '🏆', '💎', '🍪', '🔋', '🌟']
+  },
+
   // Eventyr: a winding map through themed lands. The fox walks from post
   // to post; clearing a post unlocks the next one. Each post is a short
   // round from an existing mode. The last post of a land is a boss (👑).
@@ -471,6 +478,7 @@ var LekData = {
     engelsk: { title: 'Engelsk',        icon: '🇬🇧', levels: 3 },
     penger:  { title: 'Butikk-leken',   icon: '💰', levels: 3 },
     tegne:   { title: 'Tegne-leken',    icon: '🎨', levels: 3 },
-    prikk:   { title: 'Prikk til prikk', icon: '✏️', levels: 3 }
+    prikk:   { title: 'Prikk til prikk', icon: '✏️', levels: 3 },
+    kode:    { title: 'Kode-roboten',   icon: '🤖', levels: 3 }
   }
 };

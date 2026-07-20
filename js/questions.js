@@ -534,6 +534,101 @@ var LekQuestions = (function () {
     return qs;
   }
 
+  /* ---------- Kode-roboten (learn to code) ----------
+     A robot on a small grid. Each option is a command (a single move on
+     levels 1–2, a two-move program on level 3). The child picks the one
+     that lands the robot on the goal. Movements are stored as [dx,dy]
+     steps so game.js can animate them without knowing the directions. */
+
+  var ROBOT_DIRS = {
+    right: { d: [1, 0],  arrow: '➡️', name: 'Høyre' },
+    left:  { d: [-1, 0], arrow: '⬅️', name: 'Venstre' },
+    up:    { d: [0, -1], arrow: '⬆️', name: 'Opp' },
+    down:  { d: [0, 1],  arrow: '⬇️', name: 'Ned' }
+  };
+  var ROBOT_KEYS = ['right', 'left', 'up', 'down'];
+
+  function robotBase(size, start, goal, goalEmoji, steps, opts) {
+    opts = shuffle(opts);
+    return {
+      kind: 'robot', cols: size, rows: size,
+      start: start, goal: goal, goalEmoji: goalEmoji, steps: steps,
+      options: opts.map(function (o) { return o.label; }),
+      optionHtml: opts.map(function (o) { return o.html; }),
+      commands: opts.map(function (o) { return o.cmds; })
+    };
+  }
+
+  // Levels 1–2: goal is one step away; all four directions are offered.
+  function qRobotStep(size) {
+    var sc, sr, key, gc, gr, guard = 0;
+    do {
+      sc = ri(size); sr = ri(size);
+      key = pick(ROBOT_KEYS);
+      gc = sc + ROBOT_DIRS[key].d[0];
+      gr = sr + ROBOT_DIRS[key].d[1];
+    } while ((gc < 0 || gc >= size || gr < 0 || gr >= size) && guard++ < 60);
+
+    var opts = ROBOT_KEYS.map(function (k) {
+      var dir = ROBOT_DIRS[k];
+      return {
+        label: dir.name, cmds: [dir.d],
+        html: '<span class="rb-arrow">' + dir.arrow + '</span><small>' + dir.name + '</small>'
+      };
+    });
+    var q = robotBase(size, [sc, sr], [gc, gr], pick(D.ROBOT.GOALS), 1, opts);
+    q.answer = ROBOT_DIRS[key].name;
+    return q;
+  }
+
+  // Level 3: a two-command "program". Goal is two steps from the start.
+  function qRobotSeq(size) {
+    var sc, sr, k1, k2, mc, mr, gc, gr, guard = 0;
+    do {
+      sc = ri(size); sr = ri(size);
+      k1 = pick(ROBOT_KEYS); k2 = pick(ROBOT_KEYS);
+      mc = sc + ROBOT_DIRS[k1].d[0]; mr = sr + ROBOT_DIRS[k1].d[1];
+      gc = mc + ROBOT_DIRS[k2].d[0]; gr = mr + ROBOT_DIRS[k2].d[1];
+    } while ((mc < 0 || mc >= size || mr < 0 || mr >= size ||
+              gc < 0 || gc >= size || gr < 0 || gr >= size ||
+              (gc === sc && gr === sr)) && guard++ < 100);
+
+    function seqOpt(a, b) {
+      var da = ROBOT_DIRS[a], db = ROBOT_DIRS[b];
+      return {
+        keys: a + b, cmds: [da.d, db.d],
+        label: da.name + ' + ' + db.name,
+        html: '<span class="rb-prog">' +
+                '<span class="rb-arrow">' + da.arrow + '</span>' +
+                '<span class="rb-step">så</span>' +
+                '<span class="rb-arrow">' + db.arrow + '</span>' +
+              '</span>'
+      };
+    }
+    var opts = [seqOpt(k1, k2)], g2 = 0;
+    while (opts.length < 3 && g2++ < 80) {
+      var a = pick(ROBOT_KEYS), b = pick(ROBOT_KEYS);
+      var ec = sc + ROBOT_DIRS[a].d[0] + ROBOT_DIRS[b].d[0];
+      var er = sr + ROBOT_DIRS[a].d[1] + ROBOT_DIRS[b].d[1];
+      if (ec === gc && er === gr) continue;       // would also reach the goal
+      var o = seqOpt(a, b);
+      if (opts.some(function (x) { return x.keys === o.keys; })) continue;
+      opts.push(o);
+    }
+    var q = robotBase(size, [sc, sr], [gc, gr], pick(D.ROBOT.GOALS), 2, opts);
+    q.answer = ROBOT_DIRS[k1].name + ' + ' + ROBOT_DIRS[k2].name;
+    return q;
+  }
+
+  function robotRound(level, n) {
+    var qs = [];
+    for (var i = 0; i < n; i++) {
+      qs.push(level === 1 ? qRobotStep(3) :
+              level === 2 ? qRobotStep(4) : qRobotSeq(4));
+    }
+    return qs;
+  }
+
   function clockRound(level, n) {
     var variants = level === 1 ? ['hel'] :
                    level === 2 ? ['hel', 'halv'] :
@@ -556,6 +651,7 @@ var LekQuestions = (function () {
         case 'penger':  return moneyRound(level, n);
         case 'tegne':   return traceRound(level, n);
         case 'prikk':   return dotsRound(level, n);
+        case 'kode':    return robotRound(level, n);
       }
     }
   };

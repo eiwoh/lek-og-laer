@@ -102,6 +102,22 @@ Trykk på tallene i riktig rekkefølge, så tegnes strekene og et bilde dukker o
 | 🐰 Middels | Tell 1, 2, 3 … (10–16 prikker, vanskeligere figurer) |
 | 🦉 Vanskelig | Hopptelling med 2, 5 og 10 |
 
+**🤖 Kode-roboten**
+
+Et lite «lær å kode»-spill: en robot står på et rutenett og skal fram til et mål
+(⭐, 🍎, 🎁 …). Barnet velger kommandoen som styrer roboten dit. Roboten kjører
+alltid — velger man feil, kjører den av gårde, krasjer (💥) og rygger tilbake til
+start, så man kan prøve en annen kommando.
+
+| Nivå | Innhold |
+|------|---------|
+| 🐣 Lett | 3×3-rutenett, målet er ett steg unna – velg retning (opp/ned/venstre/høyre) |
+| 🐰 Middels | 4×4-rutenett, ett steg unna |
+| 🦉 Vanskelig | 4×4-rutenett, et lite «program» på to kommandoer (f.eks. ➡️ så ⬆️) |
+
+Nye mål ligger i `ROBOT.GOALS` i `js/data.js`; selve oppgavene lages i
+`robotRound` i `js/questions.js`.
+
 Hver runde har 10 spørsmål (Tegne-leken og Prikk til prikk har 4, Regne-racer varer
 ett minutt). Riktig svar på første forsøk gir en stjerne — feil svar er ufarlig, man
 bare prøver igjen. Beste resultat per nivå lagres i nettleseren (localStorage).
