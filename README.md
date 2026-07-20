@@ -114,6 +114,7 @@ start, så man kan prøve en annen kommando.
 | 🐣 Lett | 3×3-rutenett, målet er ett steg unna – velg retning (opp/ned/venstre/høyre) |
 | 🐰 Middels | 4×4-rutenett, ett steg unna |
 | 🦉 Vanskelig | 4×4-rutenett, et lite «program» på to kommandoer (f.eks. ➡️ så ⬆️) |
+| 🦁 Ekspert | 5×5-rutenett med hindringer (🧱) og løkker – velg programmet med riktig antall gjentakelser (f.eks. ➡️ ×2 så ⬆️ ×3) som styrer roboten rundt hindrene til målet |
 
 Nye mål ligger i `ROBOT.GOALS` i `js/data.js`; selve oppgavene lages i
 `robotRound` i `js/questions.js`.

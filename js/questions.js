@@ -620,11 +620,120 @@ var LekQuestions = (function () {
     return q;
   }
 
+  /* Level 4 (Ekspert): loops + obstacles. The correct answer is a program
+     of two "loop" segments — a direction repeated N times (⬆️ ×3) — that
+     steers the robot around 🧱 walls to the goal. Wrong programs miss the
+     goal or crash into a wall. */
+  function robotFlatten(segs) {
+    var out = [];
+    segs.forEach(function (s) {
+      var d = ROBOT_DIRS[s.key].d;
+      for (var i = 0; i < s.count; i++) out.push(d);
+    });
+    return out;
+  }
+  function robotIsWall(walls, c, r) {
+    return walls.some(function (w) { return w[0] === c && w[1] === r; });
+  }
+  // Walk a flat command list; returns where the robot stops and whether it reached the goal.
+  function robotSim(sc, sr, cmds, size, walls, goal) {
+    var c = sc, r = sr;
+    for (var i = 0; i < cmds.length; i++) {
+      var nc = c + cmds[i][0], nr = r + cmds[i][1];
+      if (nc < 0 || nc >= size || nr < 0 || nr >= size || robotIsWall(walls, nc, nr))
+        return false;                       // crashed — never reaches the goal
+      c = nc; r = nr;
+    }
+    return c === goal[0] && r === goal[1];
+  }
+  function robotProgOpt(segs) {
+    return {
+      keys: segs.map(function (s) { return s.key + s.count; }).join('|'),
+      cmds: robotFlatten(segs),
+      label: segs.map(function (s) { return ROBOT_DIRS[s.key].name + ' ×' + s.count; }).join(' + '),
+      html: '<span class="rb-prog">' +
+        segs.map(function (s) {
+          return '<span class="rb-loop"><span class="rb-arrow">' + ROBOT_DIRS[s.key].arrow +
+                 '</span><span class="rb-times">×' + s.count + '</span></span>';
+        }).join('<span class="rb-step">så</span>') +
+      '</span>'
+    };
+  }
+
+  function qRobotExpert(size) {
+    var hKeys = ['right', 'left'], vKeys = ['up', 'down'];
+    var guard = 0;
+    while (guard++ < 200) {
+      var h = pick(hKeys), v = pick(vKeys);
+      var hdx = ROBOT_DIRS[h].d[0], vdy = ROBOT_DIRS[v].d[1];
+      var a = ri(3) + 1, b = ri(3) + 1;              // 1..3 steps per loop
+      if (a + b < 3 || (a < 2 && b < 2)) continue;   // expert feel + a real loop count
+      var hFirst = ri(2) === 0;
+      var sc = ri(size), sr = ri(size);
+      var gc = sc + a * hdx, gr = sr + b * vdy;
+      if (gc < 0 || gc >= size || gr < 0 || gr >= size) continue;
+
+      var correct = hFirst ? [{ key: h, count: a }, { key: v, count: b }]
+                           : [{ key: v, count: b }, { key: h, count: a }];
+      var correctCmds = robotFlatten(correct);
+      // Cells the correct path visits (walls must never sit on these).
+      var pathSet = {}, pc = sc, pr = sr;
+      pathSet[pc + ',' + pr] = 1;
+      correctCmds.forEach(function (d) { pc += d[0]; pr += d[1]; pathSet[pc + ',' + pr] = 1; });
+
+      // The opposite L-corner sits on the swapped-order route — a natural wall spot.
+      var walls = [];
+      var oppCorner = hFirst ? [sc, gr] : [gc, sr];
+      if (!pathSet[oppCorner[0] + ',' + oppCorner[1]]) walls.push(oppCorner);
+      // A couple more obstacles for maze flavour, never on the correct path.
+      var wg = 0;
+      while (walls.length < 3 && wg++ < 40) {
+        var wc = ri(size), wr = ri(size);
+        if (pathSet[wc + ',' + wr]) continue;
+        if (walls.some(function (w) { return w[0] === wc && w[1] === wr; })) continue;
+        walls.push([wc, wr]);
+      }
+
+      // Candidate wrong programs, then keep the ones that don't reach the goal.
+      var cand = [
+        hFirst ? [{ key: v, count: b }, { key: h, count: a }]      // swapped order
+               : [{ key: h, count: a }, { key: v, count: b }],
+        [{ key: h, count: a }, { key: v, count: b + 1 }],
+        [{ key: h, count: a + 1 }, { key: v, count: b }],
+        [{ key: h, count: a }, { key: v, count: Math.max(1, b - 1) }],
+        [{ key: h, count: Math.max(1, a - 1) }, { key: v, count: b }],
+        [{ key: h, count: a + b }],
+        [{ key: v, count: a + b }],
+        hFirst ? [{ key: v, count: b }, { key: h, count: a + 1 }]
+               : [{ key: h, count: a + 1 }, { key: v, count: b }]
+      ];
+      var correctKeys = robotProgOpt(correct).keys;
+      var wrongs = [], seen = {};
+      shuffle(cand).forEach(function (segs) {
+        if (wrongs.length >= 2) return;
+        var o = robotProgOpt(segs);
+        if (o.keys === correctKeys || seen[o.keys]) return;
+        if (robotSim(sc, sr, o.cmds, size, walls, [gc, gr])) return; // would also win
+        seen[o.keys] = 1;
+        wrongs.push(o);
+      });
+      if (wrongs.length < 2) continue;
+
+      var opts = [robotProgOpt(correct)].concat(wrongs);
+      var q = robotBase(size, [sc, sr], [gc, gr], pick(D.ROBOT.GOALS), a + b, opts);
+      q.walls = walls;
+      q.answer = correct.map(function (s) { return ROBOT_DIRS[s.key].name + ' ×' + s.count; }).join(' + ');
+      return q;
+    }
+    return qRobotSeq(size);                 // safety net — should never be hit
+  }
+
   function robotRound(level, n) {
     var qs = [];
     for (var i = 0; i < n; i++) {
       qs.push(level === 1 ? qRobotStep(3) :
-              level === 2 ? qRobotStep(4) : qRobotSeq(4));
+              level === 2 ? qRobotStep(4) :
+              level === 3 ? qRobotSeq(4) : qRobotExpert(5));
     }
     return qs;
   }

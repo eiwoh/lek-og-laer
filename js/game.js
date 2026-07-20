@@ -326,10 +326,11 @@
         '<div class="level-sub">Stjernene viser din beste runde</div>' +
         '<div class="levels">';
     D.LEVELS.slice(0, m.levels || 3).forEach(function (lvl) {
+      var desc = (m.levelDesc && m.levelDesc[lvl.n]) || lvl.desc;
       html +=
         '<button class="level-btn" data-level="' + lvl.n + '">' +
           '<span class="lvl-icon">' + lvl.icon + '</span>' +
-          '<span>' + lvl.name + '<small>' + lvl.desc + '</small></span>' +
+          '<span>' + lvl.name + '<small>' + desc + '</small></span>' +
           '<span class="best">' + bestStarsHtml(mode, lvl.n) + '</span>' +
         '</button>';
     });
@@ -570,6 +571,9 @@
           'grid-template-rows:repeat(' + q.rows + ',1fr);' +
           'aspect-ratio:' + q.cols + ' / ' + q.rows + '">' +
           cells +
+          (q.walls || []).map(function (w) {
+            return '<span class="robot-wall" style="' + robotCellStyle(q, w[0], w[1]) + '">🧱</span>';
+          }).join('') +
           '<span class="robot-goal" style="' + robotCellStyle(q, q.goal[0], q.goal[1]) + '">' + q.goalEmoji + '</span>' +
           '<span class="robot-bot" id="robotBot" style="' + robotCellStyle(q, q.start[0], q.start[1]) + '">🤖</span>' +
           '<span class="robot-boom" id="robotBoom">💥</span>' +
@@ -969,6 +973,11 @@
     if (!grid || !bot) return;
     var MOVE_MS = 420;
     var busy = false;
+    var walls = q.walls || [];
+
+    function isWall(cx, cy) {
+      return walls.some(function (w) { return w[0] === cx && w[1] === cy; });
+    }
 
     function place(el, cx, cy) {
       el.style.left = ((cx + 0.5) / q.cols * 100).toFixed(2) + '%';
@@ -986,8 +995,8 @@
         }
         var d = cmds[i++];
         var nc = c + d[0], nr = r + d[1];
-        if (nc < 0 || nc >= q.cols || nr < 0 || nr >= q.rows) {
-          place(bot, c + d[0] * 0.5, r + d[1] * 0.5); // bump into the wall
+        if (nc < 0 || nc >= q.cols || nr < 0 || nr >= q.rows || isWall(nc, nr)) {
+          place(bot, c + d[0] * 0.5, r + d[1] * 0.5); // bump into a wall or obstacle
           setTimeout(function () { cb(false); }, MOVE_MS);
           return;
         }

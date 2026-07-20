@@ -479,6 +479,7 @@ var LekData = {
     penger:  { title: 'Butikk-leken',   icon: '💰', levels: 3 },
     tegne:   { title: 'Tegne-leken',    icon: '🎨', levels: 3 },
     prikk:   { title: 'Prikk til prikk', icon: '✏️', levels: 3 },
-    kode:    { title: 'Kode-roboten',   icon: '🤖', levels: 3 }
+    kode:    { title: 'Kode-roboten',   icon: '🤖', levels: 4,
+               levelDesc: { 4: 'Løkker og hindre! 🧱' } }
   }
 };

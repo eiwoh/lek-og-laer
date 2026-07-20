@@ -688,9 +688,13 @@ header.top {
 .rb-cell { border: 1px dashed rgba(23, 57, 92, .14); }
 .rb-cell.alt { background: rgba(255, 255, 255, .38); }
 
-.robot-goal, .robot-bot, .robot-boom {
+.robot-goal, .robot-bot, .robot-boom, .robot-wall {
   position: absolute; transform: translate(-50%, -50%);
   line-height: 1; pointer-events: none;
+}
+.robot-wall {
+  font-size: clamp(26px, 8vw, 36px); z-index: 1;
+  filter: drop-shadow(0 2px 0 rgba(23, 57, 92, .28));
 }
 .robot-goal {
   font-size: clamp(28px, 8.5vw, 38px);
@@ -742,6 +746,10 @@ header.top {
 }
 .answers.robot .rb-step { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
 .answers.robot .ans.good .rb-step { color: #fff; }
+/* Loop segment (⬆️ ×3) on the Ekspert level */
+.answers.robot .rb-loop { display: inline-flex; align-items: center; gap: 1px; }
+.answers.robot .rb-times { font-size: 17px; font-weight: 800; color: var(--ink-soft); }
+.answers.robot .ans.good .rb-times { color: #fff; }
 .answers.robot .ans small { font-size: 14px; font-weight: 700; color: var(--ink-soft); }
 .answers.robot .ans.good small { color: #fff; }
 
