@@ -753,6 +753,61 @@ header.top {
 .answers.robot .ans small { font-size: 14px; font-weight: 700; color: var(--ink-soft); }
 .answers.robot .ans.good small { color: #fff; }
 
+/* Mester level: build-your-own-program controls */
+.robot-builder {
+  width: min(340px, 86vw);
+  margin: 14px auto 0;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.rb-program {
+  min-height: 52px;
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: nowrap; overflow-x: auto;
+  padding: 8px 10px;
+  background: var(--btn-face);
+  border: 3px dashed var(--card-edge); border-radius: 16px;
+  scrollbar-width: thin;
+}
+.rb-program.won { border-style: solid; border-color: var(--apple-deep); background: #EAF7EC; }
+.rb-empty { font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+.rb-chip {
+  flex: 0 0 auto;
+  font-size: 24px; line-height: 1;
+  padding: 5px 7px;
+  background: var(--grass-light);
+  border: 2px solid var(--card-edge); border-radius: 11px;
+}
+.rb-chip[data-new] { animation: rb-chip-in .28s ease-out; }
+@keyframes rb-chip-in {
+  from { transform: scale(.3); opacity: 0; }
+  60%  { transform: scale(1.18); }
+  to   { transform: scale(1); opacity: 1; }
+}
+.rb-palette {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+}
+.rb-key {
+  font-family: inherit; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 12px 0;
+  background: var(--btn-face);
+  border: 3px solid var(--card-edge); border-radius: 16px;
+  box-shadow: 0 5px 0 var(--card-edge);
+  transition: transform .1s;
+}
+.rb-key .rb-arrow { font-size: 30px; line-height: 1; }
+.rb-key:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--card-edge); }
+.rb-key:disabled { opacity: .4; cursor: default; }
+.rb-controls {
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+}
+.rb-controls .mini-btn:disabled { opacity: .4; cursor: default; }
+.rb-controls .mini-btn.run {
+  color: #fff; background: var(--apple); border-color: var(--apple-deep);
+  box-shadow: 0 4px 0 var(--apple-deep);
+}
+.rb-controls .mini-btn.run:disabled { background: var(--btn-face); color: var(--ink); border-color: var(--card-edge); box-shadow: 0 4px 0 var(--card-edge); }
+
 .answers {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
   margin-top: 18px; width: 100%;

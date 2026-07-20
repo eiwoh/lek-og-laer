@@ -540,6 +540,13 @@
           options: null, cls: ''
         };
       case 'robot':
+        if (q.build) {
+          return {
+            stage: '<div class="prompt">Bygg et program som styrer roboten 🤖 til ' + q.goalEmoji + '!</div>' +
+                   robotGridHtml(q) + robotBuilderHtml(q),
+            options: null, cls: ''
+          };
+        }
         return {
           stage: '<div class="prompt">' +
                    (q.steps > 1
@@ -577,6 +584,28 @@
           '<span class="robot-goal" style="' + robotCellStyle(q, q.goal[0], q.goal[1]) + '">' + q.goalEmoji + '</span>' +
           '<span class="robot-bot" id="robotBot" style="' + robotCellStyle(q, q.start[0], q.start[1]) + '">🤖</span>' +
           '<span class="robot-boom" id="robotBoom">💥</span>' +
+        '</div>' +
+      '</div>';
+  }
+
+  /* The "Mester" level's program builder: a palette of arrow keys, the
+     program strip they fill up, and the run/undo/clear controls. The child
+     assembles the whole program before pressing ▶️ Kjør. */
+  function robotBuilderHtml(q) {
+    var pal = q.palette.map(function (p, i) {
+      return '<button class="rb-key" data-i="' + i + '" aria-label="' + esc(p.name) + '">' +
+               '<span class="rb-arrow">' + p.arrow + '</span>' +
+             '</button>';
+    }).join('');
+    return '<div class="robot-builder">' +
+        '<div class="rb-program" id="rbProgram">' +
+          '<span class="rb-empty">Trykk på pilene for å legge til trekk …</span>' +
+        '</div>' +
+        '<div class="rb-palette">' + pal + '</div>' +
+        '<div class="rb-controls">' +
+          '<button class="mini-btn" id="rbUndo" disabled>↩️ Angre</button>' +
+          '<button class="mini-btn" id="rbClear" disabled>🗑️ Tøm</button>' +
+          '<button class="mini-btn run" id="rbRun" disabled>▶️ Kjør!</button>' +
         '</div>' +
       '</div>';
   }
@@ -1006,6 +1035,35 @@
       })();
     }
 
+    /* Pop the 💥 where the robot bumped and shake it — used by both the
+       pick-a-program levels and the builder. cb runs once the robot has
+       reversed back to the start. */
+    function crashAndReset(cb) {
+      state.firstTry = false;
+      if (boom) {
+        boom.style.left = bot.style.left;
+        boom.style.top = bot.style.top;
+        boom.classList.remove('show');
+        void boom.offsetWidth; // restart the pop
+        boom.classList.add('show');
+      }
+      bot.classList.remove('crash');
+      void bot.offsetWidth;
+      bot.classList.add('crash');
+      LekAudio.bad();
+      foxReact('sad');
+      var fb = document.getElementById('fb');
+      if (fb) { fb.textContent = pick(D.NUDGE); fb.className = 'feedback oops'; }
+      setTimeout(function () {
+        if (boom) boom.classList.remove('show');
+        bot.classList.remove('crash');
+        place(bot, q.start[0], q.start[1]); // reverse back to start
+        setTimeout(cb, MOVE_MS);
+      }, 780);
+    }
+
+    if (q.build) { initRobotBuilder(q, run, bot, crashAndReset); return; }
+
     board.querySelectorAll('.ans').forEach(function (btn, idx) {
       btn.addEventListener('click', function () {
         if (busy || btn.disabled) return;
@@ -1018,33 +1076,86 @@
             bot.classList.add('cheer');
             finishDrawing(state.firstTry, pick(D.PRAISE) + ' 🤖', 1300);
           } else {
-            state.firstTry = false;
             btn.classList.add('bad');
             btn.disabled = true;
-            if (boom) {
-              boom.style.left = bot.style.left;
-              boom.style.top = bot.style.top;
-              boom.classList.remove('show');
-              void boom.offsetWidth; // restart the pop
-              boom.classList.add('show');
-            }
-            bot.classList.remove('crash');
-            void bot.offsetWidth;
-            bot.classList.add('crash');
-            LekAudio.bad();
-            foxReact('sad');
-            var fb = document.getElementById('fb');
-            if (fb) { fb.textContent = pick(D.NUDGE); fb.className = 'feedback oops'; }
-            setTimeout(function () {
-              if (boom) boom.classList.remove('show');
-              bot.classList.remove('crash');
-              place(bot, q.start[0], q.start[1]); // reverse back to start
-              setTimeout(function () { busy = false; }, MOVE_MS);
-            }, 780);
+            crashAndReset(function () { busy = false; });
           }
         });
       });
     });
+  }
+
+  /* The "Mester" builder. The child taps arrow keys to fill a program strip,
+     then presses ▶️ Kjør to drive the robot. A wrong run crashes and reverses,
+     but keeps the program on the strip so it can be tweaked, not rebuilt. */
+  function initRobotBuilder(q, run, bot, crashAndReset) {
+    var program = [];                 // palette entries the child has chosen
+    var progEl = document.getElementById('rbProgram');
+    var runBtn = document.getElementById('rbRun');
+    var undoBtn = document.getElementById('rbUndo');
+    var clearBtn = document.getElementById('rbClear');
+    var keys = [].slice.call(board.querySelectorAll('.rb-key'));
+    var MAX = 14;
+    var busy = false;
+
+    function render() {
+      if (!program.length) {
+        progEl.innerHTML = '<span class="rb-empty">Trykk på pilene for å legge til trekk …</span>';
+      } else {
+        progEl.innerHTML = program.map(function (p, i) {
+          return '<span class="rb-chip"' + (i === program.length - 1 ? ' data-new="1"' : '') + '>' +
+                   p.arrow + '</span>';
+        }).join('');
+      }
+      var empty = !program.length;
+      runBtn.disabled = empty || busy;
+      undoBtn.disabled = empty || busy;
+      clearBtn.disabled = empty || busy;
+      keys.forEach(function (k) { k.disabled = busy || program.length >= MAX; });
+    }
+
+    keys.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (busy || program.length >= MAX) return;
+        program.push(q.palette[Number(btn.dataset.i)]);
+        LekAudio.click();
+        render();
+        progEl.scrollLeft = progEl.scrollWidth;
+      });
+    });
+    undoBtn.addEventListener('click', function () {
+      if (busy || !program.length) return;
+      program.pop();
+      LekAudio.click();
+      render();
+    });
+    clearBtn.addEventListener('click', function () {
+      if (busy || !program.length) return;
+      program = [];
+      LekAudio.click();
+      render();
+    });
+    runBtn.addEventListener('click', function () {
+      if (busy || !program.length) return;
+      busy = true;
+      render();
+      var cmds = program.map(function (p) { return p.d; });
+      run(cmds, function (reached) {
+        if (!state) return; // player left mid-drive
+        if (reached) {
+          bot.classList.add('cheer');
+          progEl.classList.add('won');
+          finishDrawing(state.firstTry, pick(D.PRAISE) + ' 🤖', 1400);
+        } else {
+          crashAndReset(function () {
+            busy = false;
+            render();          // re-enable the palette; keep the program to tweak
+          });
+        }
+      });
+    });
+
+    render();
   }
 
   /* ---------- Eventyr ----------

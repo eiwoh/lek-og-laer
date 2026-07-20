@@ -728,12 +728,64 @@ var LekQuestions = (function () {
     return qRobotSeq(size);                 // safety net — should never be hit
   }
 
+  /* Level 5 (Mester): no ready-made options — the child assembles the whole
+     program one move at a time from a palette of arrows, then runs it. We lay
+     out a winding, self-avoiding path from start to goal (so a solution always
+     exists) and scatter 🧱 walls off that path for maze flavour. Any program
+     the child builds that reaches the goal without crashing wins. */
+  function qRobotBuild(size) {
+    var guard = 0;
+    while (guard++ < 250) {
+      var len = 4 + ri(3);                        // 4..6 moves in the shortest path
+      var sc = ri(size), sr = ri(size);
+      var c = sc, r = sr;
+      var occ = {}; occ[c + ',' + r] = 1;
+      var lastKey = null, turns = 0, dead = false;
+      for (var step = 0; step < len; step++) {
+        var choices = ROBOT_KEYS.filter(function (k) {
+          var nc = c + ROBOT_DIRS[k].d[0], nr = r + ROBOT_DIRS[k].d[1];
+          return nc >= 0 && nc < size && nr >= 0 && nr < size && !occ[nc + ',' + nr];
+        });
+        if (!choices.length) { dead = true; break; }
+        // Prefer keeping straight only sometimes, so the path bends a couple of times.
+        var key = (lastKey && choices.indexOf(lastKey) >= 0 && ri(3) > 0) ? lastKey : pick(choices);
+        if (lastKey && key !== lastKey) turns++;
+        lastKey = key;
+        c += ROBOT_DIRS[key].d[0]; r += ROBOT_DIRS[key].d[1];
+        occ[c + ',' + r] = 1;
+      }
+      if (dead || turns < 2) continue;            // want a genuinely bendy route
+      var gc = c, gr = r;
+      if (gc === sc && gr === sr) continue;
+
+      var walls = [], wg = 0, wantWalls = 3 + ri(2);   // 3..4 obstacles
+      while (walls.length < wantWalls && wg++ < 80) {
+        var wc = ri(size), wr = ri(size);
+        if (occ[wc + ',' + wr]) continue;              // never on the solution path
+        if (wc === gc && wr === gr) continue;
+        if (walls.some(function (w) { return w[0] === wc && w[1] === wr; })) continue;
+        walls.push([wc, wr]);
+      }
+
+      var q = robotBase(size, [sc, sr], [gc, gr], pick(D.ROBOT.GOALS), len, []);
+      q.build = true;
+      q.walls = walls;
+      q.palette = ROBOT_KEYS.map(function (k) {
+        var dir = ROBOT_DIRS[k];
+        return { arrow: dir.arrow, name: dir.name, d: dir.d };
+      });
+      return q;
+    }
+    return qRobotExpert(size);                     // safety net — should never be hit
+  }
+
   function robotRound(level, n) {
     var qs = [];
     for (var i = 0; i < n; i++) {
       qs.push(level === 1 ? qRobotStep(3) :
               level === 2 ? qRobotStep(4) :
-              level === 3 ? qRobotSeq(4) : qRobotExpert(5));
+              level === 3 ? qRobotSeq(4) :
+              level === 4 ? qRobotExpert(5) : qRobotBuild(5));
     }
     return qs;
   }

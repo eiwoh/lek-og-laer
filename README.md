@@ -105,9 +105,10 @@ Trykk på tallene i riktig rekkefølge, så tegnes strekene og et bilde dukker o
 **🤖 Kode-roboten**
 
 Et lite «lær å kode»-spill: en robot står på et rutenett og skal fram til et mål
-(⭐, 🍎, 🎁 …). Barnet velger kommandoen som styrer roboten dit. Roboten kjører
-alltid — velger man feil, kjører den av gårde, krasjer (💥) og rygger tilbake til
-start, så man kan prøve en annen kommando.
+(⭐, 🍎, 🎁 …). På de første nivåene velger barnet kommandoen som styrer roboten
+dit; på det siste bygger man hele programmet selv. Roboten kjører alltid —
+velger man feil, kjører den av gårde, krasjer (💥) og rygger tilbake til start,
+så man kan prøve på nytt.
 
 | Nivå | Innhold |
 |------|---------|
@@ -115,6 +116,7 @@ start, så man kan prøve en annen kommando.
 | 🐰 Middels | 4×4-rutenett, ett steg unna |
 | 🦉 Vanskelig | 4×4-rutenett, et lite «program» på to kommandoer (f.eks. ➡️ så ⬆️) |
 | 🦁 Ekspert | 5×5-rutenett med hindringer (🧱) og løkker – velg programmet med riktig antall gjentakelser (f.eks. ➡️ ×2 så ⬆️ ×3) som styrer roboten rundt hindrene til målet |
+| 🚀 Superhjerne | 5×5-rutenett med hindringer – ingen ferdige svar: barnet bygger selv programmet ett trekk om gangen (➡️⬅️⬆️⬇️) og trykker ▶️ Kjør. Angre/Tøm gjør det enkelt å rette opp |
 
 Nye mål ligger i `ROBOT.GOALS` i `js/data.js`; selve oppgavene lages i
 `robotRound` i `js/questions.js`.
