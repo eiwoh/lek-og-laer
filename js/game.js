@@ -541,9 +541,14 @@
         };
       case 'robot':
         if (q.build) {
+          var intro = q.transform
+            ? 'Forvandle roboten 🤖 forbi hindrene fram til ' + q.goalEmoji + '!'
+            : 'Bygg et program som styrer roboten 🤖 til ' + q.goalEmoji + '!';
           return {
-            stage: '<div class="prompt">Bygg et program som styrer roboten 🤖 til ' + q.goalEmoji + '!</div>' +
-                   robotGridHtml(q) + robotBuilderHtml(q),
+            stage: '<div class="prompt">' + intro + '</div>' +
+                   robotGridHtml(q) +
+                   (q.transform ? robotLegendHtml() : '') +
+                   robotBuilderHtml(q),
             options: null, cls: ''
           };
         }
@@ -581,6 +586,10 @@
           (q.walls || []).map(function (w) {
             return '<span class="robot-wall" style="' + robotCellStyle(q, w[0], w[1]) + '">🧱</span>';
           }).join('') +
+          (q.gates || []).map(function (g) {
+            return '<span class="robot-gate rb-gate-' + g.need + '" style="' +
+                     robotCellStyle(q, g.c, g.r) + '">' + g.emoji + '</span>';
+          }).join('') +
           '<span class="robot-goal" style="' + robotCellStyle(q, q.goal[0], q.goal[1]) + '">' + q.goalEmoji + '</span>' +
           '<span class="robot-bot" id="robotBot" style="' + robotCellStyle(q, q.start[0], q.start[1]) + '">🤖</span>' +
           '<span class="robot-boom" id="robotBoom">💥</span>' +
@@ -591,22 +600,45 @@
   /* The "Mester" level's program builder: a palette of arrow keys, the
      program strip they fill up, and the run/undo/clear controls. The child
      assembles the whole program before pressing ▶️ Kjør. */
+  function robotKeyHtml(p, i) {
+    return '<button class="rb-key' + (p.transform ? ' rb-key-tf' : '') + '" data-i="' + i +
+             '" aria-label="' + esc(p.name) + '">' +
+             '<span class="rb-arrow">' + p.arrow + '</span>' +
+             (p.transform ? '<small>' + esc(p.name) + '</small>' : '') +
+           '</button>';
+  }
+
   function robotBuilderHtml(q) {
-    var pal = q.palette.map(function (p, i) {
-      return '<button class="rb-key" data-i="' + i + '" aria-label="' + esc(p.name) + '">' +
-               '<span class="rb-arrow">' + p.arrow + '</span>' +
-             '</button>';
-    }).join('');
+    var arrows = '', tfs = '';
+    q.palette.forEach(function (p, i) {
+      if (p.transform) tfs += robotKeyHtml(p, i); else arrows += robotKeyHtml(p, i);
+    });
+    var palette = '<div class="rb-palette">' + arrows + '</div>' +
+                  (tfs ? '<div class="rb-palette rb-palette-tf">' + tfs + '</div>' : '');
     return '<div class="robot-builder">' +
         '<div class="rb-program" id="rbProgram">' +
-          '<span class="rb-empty">Trykk på pilene for å legge til trekk …</span>' +
+          '<span class="rb-empty">' + robotEmptyText(q) + '</span>' +
         '</div>' +
-        '<div class="rb-palette">' + pal + '</div>' +
+        palette +
         '<div class="rb-controls">' +
           '<button class="mini-btn" id="rbUndo" disabled>↩️ Angre</button>' +
           '<button class="mini-btn" id="rbClear" disabled>🗑️ Tøm</button>' +
           '<button class="mini-btn run" id="rbRun" disabled>▶️ Kjør!</button>' +
         '</div>' +
+      '</div>';
+  }
+
+  function robotEmptyText(q) {
+    return q.transform ? 'Trykk på knappene for å bygge programmet …'
+                       : 'Trykk på pilene for å legge til trekk …';
+  }
+
+  /* Legend under the board on the Forvandling level, tying each obstacle to
+     the shape needed to pass it. */
+  function robotLegendHtml() {
+    return '<div class="rb-legend">' +
+        '<span><span class="rb-le">🕳️</span> tunnel = 🔽 liten</span>' +
+        '<span><span class="rb-le">💧</span> vann = 🔼 stor</span>' +
       '</div>';
   }
 
@@ -1003,9 +1035,20 @@
     var MOVE_MS = 420;
     var busy = false;
     var walls = q.walls || [];
+    var gates = q.gates || [];
 
     function isWall(cx, cy) {
       return walls.some(function (w) { return w[0] === cx && w[1] === cy; });
+    }
+    // A gate blocks the robot unless it is in the shape that gate needs.
+    function gateBlocks(cx, cy, shape) {
+      return gates.some(function (g) { return g.c === cx && g.r === cy && g.need !== shape; });
+    }
+    // Reflect the robot's current shape on the sprite (small / big / normal).
+    function applyShape(shape) {
+      bot.classList.remove('rb-small', 'rb-big');
+      if (shape === 'small') bot.classList.add('rb-small');
+      else if (shape === 'big') bot.classList.add('rb-big');
     }
 
     function place(el, cx, cy) {
@@ -1013,19 +1056,29 @@
       el.style.top = ((cy + 0.5) / q.rows * 100).toFixed(2) + '%';
     }
 
-    /* Walk the robot through a command list. cb(reachedGoal) fires when it
-       stops — either on the goal, or where it crashed. */
+    /* Walk the robot through a command list. Each command is either a move
+       ([dx,dy]) or a transform ({transform:'small'|'big'}). cb(reachedGoal)
+       fires when it stops — either on the goal, or where it crashed. */
     function run(cmds, cb) {
-      var c = q.start[0], r = q.start[1], i = 0;
+      var c = q.start[0], r = q.start[1], i = 0, shape = 'normal';
+      applyShape(shape);
       (function step() {
         if (i >= cmds.length) {
           cb(c === q.goal[0] && r === q.goal[1]);
           return;
         }
-        var d = cmds[i++];
+        var cmd = cmds[i++];
+        if (cmd && cmd.transform) {                 // change shape in place, no move
+          shape = cmd.transform;
+          applyShape(shape);
+          setTimeout(step, MOVE_MS);
+          return;
+        }
+        var d = cmd;
         var nc = c + d[0], nr = r + d[1];
-        if (nc < 0 || nc >= q.cols || nr < 0 || nr >= q.rows || isWall(nc, nr)) {
-          place(bot, c + d[0] * 0.5, r + d[1] * 0.5); // bump into a wall or obstacle
+        if (nc < 0 || nc >= q.cols || nr < 0 || nr >= q.rows ||
+            isWall(nc, nr) || gateBlocks(nc, nr, shape)) {
+          place(bot, c + d[0] * 0.5, r + d[1] * 0.5); // bump into a wall, obstacle or wrong-shape gate
           setTimeout(function () { cb(false); }, MOVE_MS);
           return;
         }
@@ -1057,6 +1110,7 @@
       setTimeout(function () {
         if (boom) boom.classList.remove('show');
         bot.classList.remove('crash');
+        applyShape('normal');               // back to its starting shape
         place(bot, q.start[0], q.start[1]); // reverse back to start
         setTimeout(cb, MOVE_MS);
       }, 780);
@@ -1100,10 +1154,11 @@
 
     function render() {
       if (!program.length) {
-        progEl.innerHTML = '<span class="rb-empty">Trykk på pilene for å legge til trekk …</span>';
+        progEl.innerHTML = '<span class="rb-empty">' + robotEmptyText(q) + '</span>';
       } else {
         progEl.innerHTML = program.map(function (p, i) {
-          return '<span class="rb-chip"' + (i === program.length - 1 ? ' data-new="1"' : '') + '>' +
+          return '<span class="rb-chip' + (p.transform ? ' tf' : '') + '"' +
+                   (i === program.length - 1 ? ' data-new="1"' : '') + '>' +
                    p.arrow + '</span>';
         }).join('');
       }
@@ -1139,7 +1194,9 @@
       if (busy || !program.length) return;
       busy = true;
       render();
-      var cmds = program.map(function (p) { return p.d; });
+      var cmds = program.map(function (p) {
+        return p.transform ? { transform: p.transform } : p.d;
+      });
       run(cmds, function (reached) {
         if (!state) return; // player left mid-drive
         if (reached) {

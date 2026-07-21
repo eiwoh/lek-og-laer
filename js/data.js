@@ -465,7 +465,8 @@ var LekData = {
     { n: 2, name: 'Middels',     icon: '🐰', desc: 'Litt mer å bryne seg på' },
     { n: 3, name: 'Vanskelig',   icon: '🦉', desc: 'For kloke ugler!' },
     { n: 4, name: 'Ekspert',     icon: '🦁', desc: 'Ganging og deling' },
-    { n: 5, name: 'Superhjerne', icon: '🚀', desc: 'For ekte mattemestere!' }
+    { n: 5, name: 'Superhjerne', icon: '🚀', desc: 'For ekte mattemestere!' },
+    { n: 6, name: 'Forvandling', icon: '🦾', desc: 'Bli stor og liten!' }
   ],
 
   MODES: {
@@ -479,7 +480,8 @@ var LekData = {
     penger:  { title: 'Butikk-leken',   icon: '💰', levels: 3 },
     tegne:   { title: 'Tegne-leken',    icon: '🎨', levels: 3 },
     prikk:   { title: 'Prikk til prikk', icon: '✏️', levels: 3 },
-    kode:    { title: 'Kode-roboten',   icon: '🤖', levels: 5,
-               levelDesc: { 4: 'Løkker og hindre! 🧱', 5: 'Bygg programmet selv! 🛠️' } }
+    kode:    { title: 'Kode-roboten',   icon: '🤖', levels: 6,
+               levelDesc: { 4: 'Løkker og hindre! 🧱', 5: 'Bygg programmet selv! 🛠️',
+                            6: 'Bli liten 🔽 og stor 🔼 forbi hindre!' } }
   }
 };

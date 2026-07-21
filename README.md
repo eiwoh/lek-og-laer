@@ -106,9 +106,10 @@ Trykk på tallene i riktig rekkefølge, så tegnes strekene og et bilde dukker o
 
 Et lite «lær å kode»-spill: en robot står på et rutenett og skal fram til et mål
 (⭐, 🍎, 🎁 …). På de første nivåene velger barnet kommandoen som styrer roboten
-dit; på det siste bygger man hele programmet selv. Roboten kjører alltid —
-velger man feil, kjører den av gårde, krasjer (💥) og rygger tilbake til start,
-så man kan prøve på nytt.
+dit; på de siste nivåene bygger man hele programmet selv – og helt til slutt må
+roboten til og med forvandle seg (bli liten 🔽 eller stor 🔼) for å komme forbi
+hindre. Roboten kjører alltid — velger man feil, kjører den av gårde, krasjer (💥)
+og rygger tilbake til start, så man kan prøve på nytt.
 
 | Nivå | Innhold |
 |------|---------|
@@ -117,6 +118,7 @@ så man kan prøve på nytt.
 | 🦉 Vanskelig | 4×4-rutenett, et lite «program» på to kommandoer (f.eks. ➡️ så ⬆️) |
 | 🦁 Ekspert | 5×5-rutenett med hindringer (🧱) og løkker – velg programmet med riktig antall gjentakelser (f.eks. ➡️ ×2 så ⬆️ ×3) som styrer roboten rundt hindrene til målet |
 | 🚀 Superhjerne | 5×5-rutenett med hindringer – ingen ferdige svar: barnet bygger selv programmet ett trekk om gangen (➡️⬅️⬆️⬇️) og trykker ▶️ Kjør. Angre/Tøm gjør det enkelt å rette opp |
+| 🦾 Forvandling | 5×5-rutenett der roboten kan skifte form: to nye kommandoer (🔽 Bli liten, 🔼 Bli stor) legges i programmet sammen med pilene. Noen ruter er porter som bare slipper roboten forbi i riktig form – en tunnel 🕳️ krever en liten robot, dypt vann 💧 krever en stor. Formen henger med til man forvandler seg igjen |
 
 Nye mål ligger i `ROBOT.GOALS` i `js/data.js`; selve oppgavene lages i
 `robotRound` i `js/questions.js`.

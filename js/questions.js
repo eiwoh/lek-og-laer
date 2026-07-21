@@ -779,13 +779,88 @@ var LekQuestions = (function () {
     return qRobotExpert(size);                     // safety net — should never be hit
   }
 
+  /* Level 6 (Forvandling): the robot can change shape. Two extra commands
+     join the arrow palette — 🔽 "Bli liten" and 🔼 "Bli stor". Some cells on
+     the path are gates the robot can only enter in the right shape: a tunnel
+     🕳️ needs a SMALL robot, deep water 💧 needs a BIG one. The child lays out
+     the whole program (moves + transforms) and runs it. Shape is a state that
+     sticks until the next transform, so this teaches state on top of sequencing. */
+  var ROBOT_TRANSFORMS = [
+    { transform: 'small', arrow: '🔽', name: 'Bli liten' },
+    { transform: 'big',   arrow: '🔼', name: 'Bli stor' }
+  ];
+  var ROBOT_GATE_EMOJI = { small: '🕳️', big: '💧' };
+
+  function qRobotTransform(size) {
+    var guard = 0;
+    while (guard++ < 300) {
+      var len = 5 + ri(2);                        // 5..6 moves in the shortest path
+      var sc = ri(size), sr = ri(size);
+      var c = sc, r = sr;
+      var occ = {}; occ[c + ',' + r] = 1;
+      var path = [[c, r]];
+      var lastKey = null, turns = 0, dead = false;
+      for (var step = 0; step < len; step++) {
+        var choices = ROBOT_KEYS.filter(function (k) {
+          var nc = c + ROBOT_DIRS[k].d[0], nr = r + ROBOT_DIRS[k].d[1];
+          return nc >= 0 && nc < size && nr >= 0 && nr < size && !occ[nc + ',' + nr];
+        });
+        if (!choices.length) { dead = true; break; }
+        var key = (lastKey && choices.indexOf(lastKey) >= 0 && ri(3) > 0) ? lastKey : pick(choices);
+        if (lastKey && key !== lastKey) turns++;
+        lastKey = key;
+        c += ROBOT_DIRS[key].d[0]; r += ROBOT_DIRS[key].d[1];
+        occ[c + ',' + r] = 1;
+        path.push([c, r]);
+      }
+      if (dead || turns < 2) continue;            // want a genuinely bendy route
+      var gc = c, gr = r;
+      if (gc === sc && gr === sr) continue;
+
+      // Gates sit on interior path cells (never the start or the goal).
+      var interior = shuffle(path.slice(1, path.length - 1));
+      if (interior.length < 2) continue;
+      var gateCount = interior.length >= 3 ? 1 + ri(2) : 1;   // 1..2 gates
+      var needs = shuffle(['small', 'big']);      // when there are 2, one of each
+      var gates = [];
+      for (var gi = 0; gi < gateCount; gi++) {
+        var cell = interior[gi], need = needs[gi % 2];
+        gates.push({ c: cell[0], r: cell[1], need: need, emoji: ROBOT_GATE_EMOJI[need] });
+      }
+
+      var walls = [], wg = 0, wantWalls = 2 + ri(2);         // 2..3 obstacles
+      while (walls.length < wantWalls && wg++ < 80) {
+        var wc = ri(size), wr = ri(size);
+        if (occ[wc + ',' + wr]) continue;                    // never on the solution path
+        if (wc === gc && wr === gr) continue;
+        if (walls.some(function (w) { return w[0] === wc && w[1] === wr; })) continue;
+        walls.push([wc, wr]);
+      }
+
+      var q = robotBase(size, [sc, sr], [gc, gr], pick(D.ROBOT.GOALS), len, []);
+      q.build = true;
+      q.transform = true;
+      q.walls = walls;
+      q.gates = gates;
+      q.palette = ROBOT_KEYS.map(function (k) {
+        var dir = ROBOT_DIRS[k];
+        return { arrow: dir.arrow, name: dir.name, d: dir.d };
+      }).concat(ROBOT_TRANSFORMS.map(function (t) {
+        return { arrow: t.arrow, name: t.name, transform: t.transform };
+      }));
+      return q;
+    }
+    return qRobotBuild(size);                       // safety net — should never be hit
+  }
+
   function robotRound(level, n) {
     var qs = [];
     for (var i = 0; i < n; i++) {
       qs.push(level === 1 ? qRobotStep(3) :
               level === 2 ? qRobotStep(4) :
               level === 3 ? qRobotSeq(4) :
-              level === 4 ? qRobotExpert(5) : qRobotBuild(5));
+              level === 4 ? qRobotExpert(5) :
+              level === 5 ? qRobotBuild(5) : qRobotTransform(5));
     }
     return qs;
   }

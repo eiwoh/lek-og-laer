@@ -688,14 +688,18 @@ header.top {
 .rb-cell { border: 1px dashed rgba(23, 57, 92, .14); }
 .rb-cell.alt { background: rgba(255, 255, 255, .38); }
 
-.robot-goal, .robot-bot, .robot-boom, .robot-wall {
+.robot-goal, .robot-bot, .robot-boom, .robot-wall, .robot-gate {
   position: absolute; transform: translate(-50%, -50%);
   line-height: 1; pointer-events: none;
 }
-.robot-wall {
+.robot-wall, .robot-gate {
   font-size: clamp(26px, 8vw, 36px); z-index: 1;
   filter: drop-shadow(0 2px 0 rgba(23, 57, 92, .28));
 }
+/* Forvandling gates: a soft halo hints "you have to change shape here". */
+.robot-gate { border-radius: 50%; }
+.rb-gate-small { background: radial-gradient(circle, rgba(120, 90, 40, .22) 55%, transparent 70%); }
+.rb-gate-big   { background: radial-gradient(circle, rgba(60, 140, 210, .22) 55%, transparent 70%); }
 .robot-goal {
   font-size: clamp(28px, 8.5vw, 38px);
   filter: drop-shadow(0 2px 0 rgba(23, 57, 92, .2));
@@ -707,8 +711,12 @@ header.top {
   font-size: clamp(30px, 9.5vw, 42px); z-index: 2;
   filter: drop-shadow(0 3px 2px rgba(23, 57, 92, .3));
   transition: left .4s cubic-bezier(.34, 1.32, .5, 1),
-              top .4s cubic-bezier(.34, 1.32, .5, 1);
+              top .4s cubic-bezier(.34, 1.32, .5, 1),
+              font-size .28s ease;
 }
+/* Forvandling shapes: the robot shrinks to fit tunnels, grows to cross water. */
+.robot-bot.rb-small { font-size: clamp(19px, 6vw, 27px); }
+.robot-bot.rb-big   { font-size: clamp(40px, 12.5vw, 56px); }
 .robot-bot.cheer { animation: rb-cheer .55s ease-in-out 2; }
 @keyframes rb-cheer {
   25% { transform: translate(-50%, -74%) rotate(-12deg); }
@@ -777,6 +785,7 @@ header.top {
   background: var(--grass-light);
   border: 2px solid var(--card-edge); border-radius: 11px;
 }
+.rb-chip.tf { background: #FFE8B8; border-color: #D8A43A; }
 .rb-chip[data-new] { animation: rb-chip-in .28s ease-out; }
 @keyframes rb-chip-in {
   from { transform: scale(.3); opacity: 0; }
@@ -786,6 +795,19 @@ header.top {
 .rb-palette {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
 }
+/* Forvandling: the two shape-change keys sit in their own row below the arrows */
+.rb-palette-tf { grid-template-columns: repeat(2, 1fr); margin-top: -2px; }
+.rb-key-tf {
+  flex-direction: column; gap: 2px; padding: 9px 0;
+  background: #FFF4D6; border-color: #D8A43A; box-shadow: 0 5px 0 #C79427;
+}
+.rb-key-tf .rb-arrow { font-size: 24px; }
+.rb-key-tf small { font-size: 12px; font-weight: 800; color: var(--ink-soft); }
+.rb-legend {
+  display: flex; justify-content: center; flex-wrap: wrap; gap: 8px 18px;
+  margin: 12px auto 0; font-size: 14px; font-weight: 800; color: var(--ink-soft);
+}
+.rb-legend .rb-le { font-size: 20px; vertical-align: -3px; }
 .rb-key {
   font-family: inherit; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
