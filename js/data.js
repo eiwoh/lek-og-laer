@@ -354,6 +354,98 @@ var LekData = {
     GOALS: ['⭐', '🍎', '🎁', '🍌', '🍓', '🧀', '🍩', '🏆', '💎', '🍪', '🔋', '🌟']
   },
 
+  // Kode-quiz: a step "closer to real code" than Kode-roboten. Each puzzle is
+  // multiple choice over tiny snippets of real JavaScript.
+  //   t:'pick'  — a task in words; choose the code that does it.
+  //               `ok` is correct; `bad` are the wrong options.
+  //               Keep `ok`/`bad` on ONE line and use single quotes only
+  //               (the snippet string doubles as the button's value).
+  //   t:'out'   — show `code` (may be multi-line via \n) and ask `q`;
+  //               choose what it prints. `out` is correct; `bad` are wrong.
+  // Add more items here — the round generator picks and shuffles them.
+  CODE: {
+    1: [
+      { t: 'pick', ask: 'Vi vil skrive HEI på skjermen.',
+        ok: "console.log('HEI')", bad: ["console.log(HEI)", "skriv('HEI')"] },
+      { t: 'pick', ask: 'Skriv ut ordet KATT.',
+        ok: "console.log('KATT')", bad: ["console.print('KATT')", "console.log(KATT)"] },
+      { t: 'pick', ask: 'Skriv ut tallet 5.',
+        ok: "console.log(5)", bad: ["console.log('fem')", "print(5)"] },
+      { t: 'pick', ask: 'Skriv ut ordet SOL.',
+        ok: "console.log('SOL')", bad: ["log('SOL')", "console.log(SOL)"] },
+      { t: 'pick', ask: 'Skriv ut et hjerte ❤️.',
+        ok: "console.log('❤️')", bad: ["console.log(❤️)", "console.hjerte('❤️')"] },
+      { t: 'pick', ask: 'Skriv ut ordet HALLO.',
+        ok: "console.log('HALLO')", bad: ["console.say('HALLO')", "console.log(HALLO)"] },
+      { t: 'pick', ask: 'Skriv ut tallet 10.',
+        ok: "console.log(10)", bad: ["console.log(ti)", "print(10)"] },
+      { t: 'pick', ask: 'Skriv ut ordet MAMMA.',
+        ok: "console.log('MAMMA')", bad: ["console.write('MAMMA')", "console.log(MAMMA)"] },
+      { t: 'out', code: "console.log('HEI')", q: 'Hva skriver koden ut?',
+        out: 'HEI', bad: ['hei', 'console'] },
+      { t: 'out', code: "console.log('BALL')", q: 'Hva skriver koden ut?',
+        out: 'BALL', bad: ['ball', 'BALL!'] },
+      { t: 'out', code: "console.log(3)", q: 'Hva skriver koden ut?',
+        out: '3', bad: ['tre', '0'] },
+      { t: 'out', code: "console.log('123')", q: 'Hva skriver koden ut?',
+        out: '123', bad: ['6', 'abc'] }
+    ],
+    2: [
+      { t: 'out', code: "console.log(2 + 3)", q: 'Hva skriver koden ut?',
+        out: '5', bad: ['23', '6'] },
+      { t: 'out', code: "console.log(10 - 4)", q: 'Hva skriver koden ut?',
+        out: '6', bad: ['14', '104'] },
+      { t: 'out', code: "console.log(3 * 2)", q: 'Hva skriver koden ut?',
+        out: '6', bad: ['5', '32'] },
+      { t: 'out', code: "console.log(4 + 4)", q: 'Hva skriver koden ut?',
+        out: '8', bad: ['44', '16'] },
+      { t: 'out', code: "console.log(2 * 5)", q: 'Hva skriver koden ut?',
+        out: '10', bad: ['25', '7'] },
+      { t: 'out', code: "let x = 5;\nconsole.log(x)", q: 'Hva skriver koden ut?',
+        out: '5', bad: ['x', '0'] },
+      { t: 'out', code: "let tall = 9;\nconsole.log(tall)", q: 'Hva skriver koden ut?',
+        out: '9', bad: ['tall', '0'] },
+      { t: 'out', code: "let a = 2;\nlet b = 3;\nconsole.log(a + b)", q: 'Hva skriver koden ut?',
+        out: '5', bad: ['a + b', '23'] },
+      { t: 'out', code: "let x = 10;\nconsole.log(x - 1)", q: 'Hva skriver koden ut?',
+        out: '9', bad: ['10', 'x - 1'] },
+      { t: 'pick', ask: 'Vi vil regne ut 6 pluss 2.',
+        ok: "console.log(6 + 2)", bad: ["console.log(6 - 2)", "console.log('6 + 2')"] },
+      { t: 'pick', ask: 'Vi vil regne ut 8 minus 5.',
+        ok: "console.log(8 - 5)", bad: ["console.log(8 + 5)", "console.log(5 - 8)"] },
+      { t: 'pick', ask: 'Lag en variabel alder som er 7.',
+        ok: "let alder = 7", bad: ["let alder == 7", "let 7 = alder"] },
+      { t: 'pick', ask: 'Lag en variabel navn som er Mia.',
+        ok: "let navn = 'Mia'", bad: ["let navn = Mia", "let 'Mia' = navn"] }
+    ],
+    3: [
+      { t: 'out', code: "for (let i = 0; i < 3; i++) {\n  console.log('Hei')\n}",
+        q: 'Hvor mange ganger skrives Hei ut?', out: '3', bad: ['1', '2'] },
+      { t: 'out', code: "for (let i = 0; i < 5; i++) {\n  console.log('⭐')\n}",
+        q: 'Hvor mange stjerner skrives ut?', out: '5', bad: ['4', '6'] },
+      { t: 'out', code: "for (let i = 0; i < 2; i++) {\n  console.log('🐱')\n}",
+        q: 'Hvor mange katter skrives ut?', out: '2', bad: ['1', '3'] },
+      { t: 'out', code: "for (let i = 1; i < 4; i++) {\n  console.log(i)\n}",
+        q: 'Hvilke tall skrives ut?', out: '1 2 3', bad: ['1 2 3 4', '0 1 2'] },
+      { t: 'out', code: "let x = 5;\nif (x > 3) {\n  console.log('STOR')\n}",
+        q: 'Hva skriver koden ut?', out: 'STOR', bad: ['ingenting', '5'] },
+      { t: 'out', code: "let x = 2;\nif (x > 5) {\n  console.log('STOR')\n}",
+        q: 'Hva skriver koden ut?', out: 'ingenting', bad: ['STOR', '2'] },
+      { t: 'out', code: "let alder = 8;\nif (alder > 6) {\n  console.log('VOKSEN')\n}",
+        q: 'Hva skriver koden ut?', out: 'VOKSEN', bad: ['ingenting', '8'] },
+      { t: 'out', code: "let n = 3;\nif (n > 0) {\n  console.log('JA')\n}",
+        q: 'Hva skriver koden ut?', out: 'JA', bad: ['NEI', 'ingenting'] },
+      { t: 'out', code: "let x = 4;\nif (x > 10) {\n  console.log('MYE')\n}",
+        q: 'Hva skriver koden ut?', out: 'ingenting', bad: ['MYE', '4'] },
+      { t: 'pick', ask: 'Sjekk om x er større enn 5.',
+        ok: "if (x > 5)", bad: ["if (x = 5)", "if x > 5"] },
+      { t: 'pick', ask: 'Sjekk om x er lik 5.',
+        ok: "if (x == 5)", bad: ["if (x = 5)", "when (x == 5)"] },
+      { t: 'pick', ask: 'Start en løkke som teller fra 0 til under 3.',
+        ok: "for (let i = 0; i < 3; i++)", bad: ["for (let i = 0; i > 3; i++)", "for i = 0 to 3"] }
+    ]
+  },
+
   // Eventyr: a winding map through themed lands. The fox walks from post
   // to post; clearing a post unlocks the next one. Each post is a short
   // round from an existing mode. The last post of a land is a boss (👑).
@@ -482,6 +574,9 @@ var LekData = {
     prikk:   { title: 'Prikk til prikk', icon: '✏️', levels: 3 },
     kode:    { title: 'Kode-roboten',   icon: '🤖', levels: 6,
                levelDesc: { 4: 'Løkker og hindre! 🧱', 5: 'Bygg programmet selv! 🛠️',
-                            6: 'Bli liten 🔽 og stor 🔼 forbi hindre!' } }
+                            6: 'Bli liten 🔽 og stor 🔼 forbi hindre!' } },
+    kodequiz: { title: 'Kode-quiz',     icon: '🧑‍💻', levels: 3,
+               levelDesc: { 1: 'Skriv ut med console.log', 2: 'Variabler og regning',
+                            3: 'if-tester og løkker' } }
   }
 };

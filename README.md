@@ -123,6 +123,24 @@ og rygger tilbake til start, så man kan prøve på nytt.
 Nye mål ligger i `ROBOT.GOALS` i `js/data.js`; selve oppgavene lages i
 `robotRound` i `js/questions.js`.
 
+**🧑‍💻 Kode-quiz**
+
+Et lite steg nærmere «ekte» kode enn Kode-roboten: hver oppgave er et
+flervalg over bittesmå snutter ekte JavaScript. Noen oppgaver beskriver hva vi
+vil få til og ber barnet velge koden som gjør det; andre viser en kodesnutt og
+spør hva den skriver ut. Alt bruker `console.log`, enkle tall og korte ord.
+
+| Nivå | Innhold |
+|------|---------|
+| 🐣 Lett | Skrive ut med `console.log('HEI')` – hvorfor tekst må ha anførselstegn, og hva koden skriver ut |
+| 🐰 Middels | Regnestykker (`console.log(2 + 3)`) og variabler (`let x = 5`) – hva blir resultatet? |
+| 🦉 Vanskelig | `if`-tester og `for`-løkker – hva skrives ut, og hvor mange ganger? |
+
+Alle oppgavene ligger i `CODE` i `js/data.js` (lett å legge til flere) og lages
+av `codeRound` i `js/questions.js`. **Merk:** «velg riktig kode»-alternativene
+(`ok`/`bad`) må stå på én linje og bruke enkle anførselstegn – snutten brukes
+også som knappens verdi. `out`-oppgaver kan gjerne ha flere linjer i `code`.
+
 Hver runde har 10 spørsmål (Tegne-leken og Prikk til prikk har 4, Regne-racer varer
 ett minutt). Riktig svar på første forsøk gir en stjerne — feil svar er ufarlig, man
 bare prøver igjen. Beste resultat per nivå lagres i nettleseren (localStorage).

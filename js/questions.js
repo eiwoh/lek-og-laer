@@ -874,6 +874,41 @@ var LekQuestions = (function () {
     return qs;
   }
 
+  /* ---------- Kode-quiz ---------- */
+
+  function qCodePick(item) {
+    return {
+      kind: 'code', style: 'pick',
+      ask: item.ask,
+      answer: item.ok,
+      options: shuffle([item.ok].concat(item.bad))
+    };
+  }
+
+  function qCodeOut(item) {
+    return {
+      kind: 'code', style: 'out',
+      code: item.code,
+      prompt: item.q || 'Hva skriver koden ut?',
+      answer: item.out,
+      options: shuffle([item.out].concat(item.bad))
+    };
+  }
+
+  function makeCodeQ(item) {
+    return item.t === 'out' ? qCodeOut(item) : qCodePick(item);
+  }
+
+  function codeRound(level, n) {
+    var pool = D.CODE[level] || D.CODE[1];
+    var bag = shuffle(pool), qs = [];
+    for (var i = 0; i < n; i++) {
+      if (i % bag.length === 0 && i > 0) bag = shuffle(pool); // reshuffle when the pool is exhausted
+      qs.push(makeCodeQ(bag[i % bag.length]));
+    }
+    return qs;
+  }
+
   return {
     buildRound: function (mode, level, n) {
       switch (mode) {
@@ -888,6 +923,7 @@ var LekQuestions = (function () {
         case 'tegne':   return traceRound(level, n);
         case 'prikk':   return dotsRound(level, n);
         case 'kode':    return robotRound(level, n);
+        case 'kodequiz': return codeRound(level, n);
       }
     }
   };

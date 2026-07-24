@@ -228,7 +228,7 @@
     D.ADVENTURE.NODES.forEach(function (_, i) { advGot += adv.stars[i] || 0; });
     html += modeStatHtml('🗺️', 'Eventyr', advGot, advMax);
 
-    ['matte', 'racer', 'monster', 'lesing', 'quiz', 'klokke', 'engelsk', 'penger', 'tegne', 'prikk', 'kode']
+    ['matte', 'racer', 'monster', 'lesing', 'quiz', 'klokke', 'engelsk', 'penger', 'tegne', 'prikk', 'kode', 'kodequiz']
       .forEach(function (mode) {
         var m = D.MODES[mode];
         html += modeStatHtml(m.icon, m.title, modeStars(mode), (m.levels || 3) * 3);
@@ -300,6 +300,10 @@
           '<button class="mode-btn kode" data-mode="kode">' +
             '<span class="big">🤖</span>' +
             '<span>Kode-roboten<small>Programmer roboten fram til målet!</small></span>' +
+          '</button>' +
+          '<button class="mode-btn kodequiz" data-mode="kodequiz">' +
+            '<span class="big">🧑‍💻</span>' +
+            '<span>Kode-quiz<small>Hvilken kode er riktig?</small></span>' +
           '</button>' +
         '</div>' +
       '</div>';
@@ -559,6 +563,23 @@
                      : 'Hvilken vei skal roboten 🤖 kjøre til ' + q.goalEmoji + '?') +
                  '</div>' + robotGridHtml(q),
           options: q.options, optionHtml: q.optionHtml, cls: ' robot'
+        };
+      case 'code':
+        var codeOpts = q.options.map(function (o) {
+          return '<code class="code-snip">' + esc(o) + '</code>';
+        });
+        if (q.style === 'out') {
+          return {
+            stage: '<div class="prompt">Les koden 🧑‍💻</div>' +
+                   '<pre class="code-block">' + esc(q.code) + '</pre>' +
+                   '<div class="prompt">' + esc(q.prompt) + '</div>',
+            options: q.options, optionHtml: codeOpts, cls: ' code'
+          };
+        }
+        return {
+          stage: '<div class="code-task">' + esc(q.ask) + '</div>' +
+                 '<div class="prompt">Hvilken kode er riktig? 🧑‍💻</div>',
+          options: q.options, optionHtml: codeOpts, cls: ' code'
         };
     }
   }
